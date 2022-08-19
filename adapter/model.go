@@ -41,18 +41,6 @@ func (m *Model[T]) SetHeight(v int) {
 	m.adaptee, _ = sizeutil.TrySetHeight(m.adaptee, v)
 }
 
-// func (m *Model[T]) SetInit(v func(T) tea.Cmd) {
-// 	m.init = v
-// }
-
-// func (m *Model[T]) SetUpdate(v func(T, tea.Msg) (T, tea.Cmd)) {
-// 	m.update = v
-// }
-
-// func (m *Model[T]) SetView(v func(T) string) {
-// 	m.view = v
-// }
-
 func (m *Model[T]) SetWidth(v int) {
 	m.adaptee, _ = sizeutil.TrySetWidth(m.adaptee, v)
 }
