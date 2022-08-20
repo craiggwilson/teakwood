@@ -49,16 +49,16 @@ func (m *Model) SetChildren(children ...tea.Model) {
 	m.children = children
 }
 
-func (m *Model) SetOrientation(v Orientation) {
-	m.orientation = v
+func (m *Model) SetOrientation(orientation Orientation) {
+	m.orientation = orientation
 }
 
-func (m *Model) SetPosition(v lipgloss.Position) {
-	m.position = v
+func (m *Model) SetPosition(position lipgloss.Position) {
+	m.position = position
 }
 
-func (m *Model) SetSpacing(v int) {
-	m.spacing = v
+func (m *Model) SetSpacing(spacaing int) {
+	m.spacing = spacaing
 }
 
 func (m Model) Spacing() int {

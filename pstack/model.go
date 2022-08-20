@@ -5,10 +5,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/craiggwilson/teacomps/sizeutil"
+	"github.com/craiggwilson/teacomps"
 )
 
-func New(orientation Orientation, lengths []Length, children []tea.Model) Model {
+func New(orientation Orientation, lengths []Length, children []teacomps.Visual) Model {
 	return Model{
 		orientation: orientation,
 		lengths:     lengths,
@@ -27,18 +27,14 @@ type Model struct {
 	orientation Orientation
 	position    lipgloss.Position
 
-	children []tea.Model
+	children []teacomps.Visual
 	lengths  []Length
-	width    int
-	height   int
+
+	bounds teacomps.Rectangle
 }
 
-func (m Model) Children() []tea.Model {
+func (m Model) Children() []teacomps.Visual {
 	return m.children
-}
-
-func (m Model) Height() int {
-	return m.height
 }
 
 func (m Model) Init() tea.Cmd {
@@ -57,40 +53,37 @@ func (m Model) Orientation() Orientation {
 	return m.orientation
 }
 
-func (m *Model) SetChildren(v ...tea.Model) {
-	m.children = v
+func (m *Model) SetChildren(children ...teacomps.Visual) {
+	m.children = children
 }
 
-func (m *Model) SetHeight(v int) {
-	m.height = v
+func (m *Model) SetLengths(lengths ...Length) {
+	m.lengths = lengths
 }
 
-func (m *Model) SetLengths(v ...Length) {
-	m.lengths = v
+func (m *Model) SetOrientation(orientation Orientation) {
+	m.orientation = orientation
 }
 
-func (m *Model) SetOrientation(v Orientation) {
-	m.orientation = v
-}
-
-func (m *Model) SetPosition(v lipgloss.Position) {
-	m.position = v
-}
-
-func (m *Model) SetWidth(v int) {
-	m.width = v
+func (m *Model) SetPosition(position lipgloss.Position) {
+	m.position = position
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	for i, child := range m.children {
-		m.children[i], cmd = child.Update(msg)
+		newChild, cmd := child.Update(msg)
+		m.children[i] = newChild.(teacomps.Visual)
 		cmds = append(cmds, cmd)
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m Model) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
+	m.bounds = bounds
+	return m
 }
 
 func (m Model) View() string {
@@ -102,9 +95,9 @@ func (m Model) View() string {
 			s := lipgloss.NewStyle()
 			switch m.orientation {
 			case Vertical:
-				s = s.MaxWidth(m.width).MaxHeight(absLengths[i])
+				s = s.MaxWidth(m.bounds.Width).MaxHeight(absLengths[i])
 			case Horizontal:
-				s = s.MaxHeight(m.height).MaxWidth(absLengths[i])
+				s = s.MaxHeight(m.bounds.Height).MaxWidth(absLengths[i])
 			}
 
 			views[i] = s.Render(child.View())
@@ -131,9 +124,9 @@ func (m *Model) computeAbsoluteLengths() []int {
 	var remaining int
 	switch m.orientation {
 	case Vertical:
-		remaining = m.height
+		remaining = m.bounds.Height
 	case Horizontal:
-		remaining = m.width
+		remaining = m.bounds.Width
 	}
 
 	proportionalCount := 0
@@ -158,10 +151,9 @@ func (m *Model) computeAbsoluteLengths() []int {
 			continue
 		}
 
-		// Reset the size back to the default. Ignore the cmds from this as we'll be
-		// calling this same function on the child later and will use that one.
-		m.children[i], _ = sizeutil.TrySetHeight(m.children[i], 0)
-		m.children[i], _ = sizeutil.TrySetWidth(m.children[i], 0)
+		// Temporarily, we'll clear the bounds to indicate we'd like these to be autosized. They'll
+		// get set back later.
+		m.children[i] = m.children[i].UpdateBounds(teacomps.Rectangle{})
 
 		w, h := lipgloss.Size(m.children[i].View())
 		switch m.orientation {
@@ -189,14 +181,18 @@ func (m *Model) computeAbsoluteLengths() []int {
 		}
 	}
 
+	curX := m.bounds.X
+	curY := m.bounds.Y
 	for i := range m.children {
 		switch m.orientation {
 		case Vertical:
-			m.children[i], _ = sizeutil.TrySetHeight(m.children[i], absLengths[i])
-			m.children[i], _ = sizeutil.TrySetWidth(m.children[i], m.width)
+			childBounds := teacomps.NewRectangle(curX, curY, m.bounds.Width, absLengths[i])
+			m.children[i] = m.children[i].UpdateBounds(childBounds)
+			curY += absLengths[i]
 		case Horizontal:
-			m.children[i], _ = sizeutil.TrySetHeight(m.children[i], m.height)
-			m.children[i], _ = sizeutil.TrySetWidth(m.children[i], absLengths[i])
+			childBounds := teacomps.NewRectangle(curX, curY, absLengths[i], m.bounds.Height)
+			m.children[i] = m.children[i].UpdateBounds(childBounds)
+			curX += absLengths[i]
 		}
 	}
 

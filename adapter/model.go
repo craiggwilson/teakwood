@@ -2,7 +2,7 @@ package adapter
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/craiggwilson/teacomps/sizeutil"
+	"github.com/craiggwilson/teacomps"
 )
 
 func New[T any](adaptee T, opts ...Opt[T]) Model[T] {
@@ -37,14 +37,6 @@ func (m Model[T]) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model[T]) SetHeight(v int) {
-	m.adaptee, _ = sizeutil.TrySetHeight(m.adaptee, v)
-}
-
-func (m *Model[T]) SetWidth(v int) {
-	m.adaptee, _ = sizeutil.TrySetWidth(m.adaptee, v)
-}
-
 func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	if m.update != nil {
@@ -54,6 +46,15 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, cmd
+}
+
+func (m Model[T]) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
+	if c, ok := any(m.adaptee).(teacomps.Visual); ok {
+		newAdaptee := c.UpdateBounds(bounds)
+		m.adaptee = newAdaptee.(T)
+	}
+
+	return m
 }
 
 func (m *Model[T]) UpdateAdaptee(v func(T) T) {

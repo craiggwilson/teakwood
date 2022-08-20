@@ -1,6 +1,9 @@
 package pages
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/craiggwilson/teacomps"
+)
 
 func New(pages ...tea.Model) Model {
 	return Model{
@@ -13,12 +16,11 @@ type Model struct {
 
 	currentPage int
 
-	width  int
-	height int
+	bounds teacomps.Rectangle
 }
 
-func (m *Model) AddPage(v tea.Model) {
-	m.pages = append(m.pages, v)
+func (m *Model) AddPage(page tea.Model) {
+	m.pages = append(m.pages, page)
 }
 
 func (m Model) CurrentPage() int {
@@ -29,9 +31,9 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) InsertPage(v int, page tea.Model) {
-	m.pages = append(m.pages[:v+1], m.pages[v:]...)
-	m.pages[v] = page
+func (m *Model) InsertPage(index int, page tea.Model) {
+	m.pages = append(m.pages[:index+1], m.pages[index:]...)
+	m.pages[index] = page
 }
 
 func (m *Model) NextPage() {
@@ -46,8 +48,8 @@ func (m *Model) PrevPage() {
 	}
 }
 
-func (m *Model) RemovePage(v int) {
-	m.pages = append(m.pages[:v], m.pages[v+1:]...)
+func (m *Model) RemovePage(index int) {
+	m.pages = append(m.pages[:index], m.pages[index+1:]...)
 }
 
 func (m *Model) SetCurrentPage(v int) {
@@ -70,6 +72,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m Model) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
+	m.bounds = bounds
+	for i, page := range m.pages {
+		if c, ok := page.(teacomps.Visual); ok {
+			m.pages[i] = c.UpdateBounds(bounds)
+		}
+	}
+
+	return m
 }
 
 func (m Model) View() string {

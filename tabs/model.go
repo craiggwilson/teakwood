@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/craiggwilson/teacomps"
 )
 
 func New(tabs ...tea.Model) Model {
@@ -21,8 +22,7 @@ type Model struct {
 
 	styles Styles
 
-	height int
-	width  int
+	bounds teacomps.Rectangle
 }
 
 func (m *Model) AddTab(v tea.Model) {
@@ -69,16 +69,8 @@ func (m *Model) SetCurrentTab(v int) {
 	}
 }
 
-func (m *Model) SetHeight(v int) {
-	m.height = v
-}
-
 func (m *Model) SetStyles(styles Styles) {
 	m.styles = styles
-}
-
-func (m *Model) SetWidth(v int) {
-	m.width = v
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -90,6 +82,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m Model) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
+	m.bounds = bounds
+	return m
 }
 
 func (m Model) View() string {
@@ -106,7 +103,7 @@ func (m Model) View() string {
 	}
 
 	view := lipgloss.JoinHorizontal(lipgloss.Top, views...)
-	filler := m.styles.Filler.Render(strings.Repeat(" ", max(0, m.width-lipgloss.Width(view))))
+	filler := m.styles.Filler.Render(strings.Repeat(" ", max(0, m.bounds.Width-lipgloss.Width(view))))
 	return lipgloss.JoinHorizontal(lipgloss.Bottom, view, filler)
 }
 

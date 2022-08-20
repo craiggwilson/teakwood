@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/craiggwilson/teacomps"
 	"github.com/craiggwilson/teacomps/adapter"
 	"github.com/craiggwilson/teacomps/examples"
 	"github.com/craiggwilson/teacomps/frame"
@@ -88,9 +89,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		cmds = append(cmds, named.Update(rootName, func(st pstack.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
-			st.SetWidth(tmsg.Width)
-			st.SetHeight(tmsg.Height)
-			return st, nil
+			return st.UpdateBounds(teacomps.NewRectangle(0, 0, tmsg.Width, tmsg.Height)), nil
 		}))
 	}
 
@@ -128,7 +127,7 @@ func main() {
 		root: named.New(rootName, pstack.New(
 			pstack.Vertical,
 			[]pstack.Length{pstack.Absolute(3), pstack.Proportional(1), pstack.Auto()},
-			[]tea.Model{
+			[]teacomps.Visual{
 				frame.New(
 					lipgloss.NewStyle().BorderForeground(lipgloss.Color("1")).Border(lipgloss.NormalBorder(), true).Align(.5),
 					label.New("Header"),
@@ -136,7 +135,7 @@ func main() {
 				pstack.New(
 					pstack.Horizontal,
 					[]pstack.Length{pstack.Absolute(30), pstack.Proportional(6), pstack.Proportional(1)},
-					[]tea.Model{
+					[]teacomps.Visual{
 						frame.New(
 							lipgloss.NewStyle().BorderForeground(lipgloss.Color("2")).Border(lipgloss.NormalBorder(), true),
 							label.New("Left"),
@@ -146,7 +145,7 @@ func main() {
 							pstack.New(
 								pstack.Vertical,
 								[]pstack.Length{pstack.Auto(), pstack.Proportional(1)},
-								[]tea.Model{
+								[]teacomps.Visual{
 									named.New(tabsName, tabs.New(tab1, tab2)),
 									named.New(pagesName, pages.New(page1, page2)),
 								},
