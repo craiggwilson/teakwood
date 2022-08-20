@@ -20,9 +20,10 @@ func New[T any](adaptee T, opts ...Opt[T]) Model[T] {
 type Model[T any] struct {
 	adaptee T
 
-	init   func(T) tea.Cmd
-	update func(T, tea.Msg) (T, tea.Cmd)
-	view   func(T) string
+	init         func(T) tea.Cmd
+	update       func(T, tea.Msg) (T, tea.Cmd)
+	updateBounds func(T, teacomps.Rectangle) T
+	view         func(T) string
 }
 
 func (m Model[T]) Init() tea.Cmd {
@@ -49,8 +50,10 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model[T]) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
-	if c, ok := any(m.adaptee).(teacomps.Visual); ok {
-		newAdaptee := c.UpdateBounds(bounds)
+	if m.updateBounds != nil {
+		m.adaptee = m.updateBounds(m.adaptee, bounds)
+	} else if bu, ok := any(m.adaptee).(boundsUpdater); ok {
+		newAdaptee := bu.UpdateBounds(bounds)
 		m.adaptee = newAdaptee.(T)
 	}
 
@@ -71,6 +74,10 @@ func (m Model[T]) View() string {
 	}
 
 	return ""
+}
+
+type boundsUpdater interface {
+	UpdateBounds(teacomps.Rectangle) teacomps.Visual
 }
 
 type initer interface {

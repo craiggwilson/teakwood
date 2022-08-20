@@ -112,6 +112,10 @@ func main() {
 
 	helpAdapter := adapter.New(
 		help.New(),
+		adapter.WithUpdateBounds(func(m help.Model, bounds teacomps.Rectangle) help.Model {
+			m.Width = bounds.Width
+			return m
+		}),
 		adapter.WithView(func(m help.Model) string {
 			return m.View(&km)
 		}),
