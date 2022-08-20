@@ -1,4 +1,4 @@
-package teacomps
+package teakwood
 
 func NewRectangle(x, y, width, height int) Rectangle {
 	return Rectangle{

@@ -1,4 +1,4 @@
-module github.com/craiggwilson/teacomps
+module github.com/craiggwilson/teakwood
 
 go 1.18
 

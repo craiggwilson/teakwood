@@ -2,7 +2,7 @@ package adapter
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/craiggwilson/teacomps"
+	"github.com/craiggwilson/teakwood"
 )
 
 func New[T any](adaptee T, opts ...Opt[T]) Model[T] {
@@ -22,7 +22,7 @@ type Model[T any] struct {
 
 	init         func(T) tea.Cmd
 	update       func(T, tea.Msg) (T, tea.Cmd)
-	updateBounds func(T, teacomps.Rectangle) T
+	updateBounds func(T, teakwood.Rectangle) T
 	view         func(T) string
 }
 
@@ -49,7 +49,7 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model[T]) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
+func (m Model[T]) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 	if m.updateBounds != nil {
 		m.adaptee = m.updateBounds(m.adaptee, bounds)
 	} else if bu, ok := any(m.adaptee).(boundsUpdater); ok {
@@ -77,7 +77,7 @@ func (m Model[T]) View() string {
 }
 
 type boundsUpdater interface {
-	UpdateBounds(teacomps.Rectangle) teacomps.Visual
+	UpdateBounds(teakwood.Rectangle) teakwood.Visual
 }
 
 type initer interface {

@@ -2,7 +2,7 @@ package pages
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/craiggwilson/teacomps"
+	"github.com/craiggwilson/teakwood"
 )
 
 func New(pages ...tea.Model) Model {
@@ -16,7 +16,7 @@ type Model struct {
 
 	currentPage int
 
-	bounds teacomps.Rectangle
+	bounds teakwood.Rectangle
 }
 
 func (m *Model) AddPage(page tea.Model) {
@@ -74,10 +74,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m Model) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
+func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 	m.bounds = bounds
 	for i, page := range m.pages {
-		if c, ok := page.(teacomps.Visual); ok {
+		if c, ok := page.(teakwood.Visual); ok {
 			m.pages[i] = c.UpdateBounds(bounds)
 		}
 	}

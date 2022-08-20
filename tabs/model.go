@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/craiggwilson/teacomps"
+	"github.com/craiggwilson/teakwood"
 )
 
 func New(tabs ...tea.Model) Model {
@@ -22,7 +22,7 @@ type Model struct {
 
 	styles Styles
 
-	bounds teacomps.Rectangle
+	bounds teakwood.Rectangle
 }
 
 func (m *Model) AddTab(v tea.Model) {
@@ -84,7 +84,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m Model) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
+func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 	m.bounds = bounds
 	return m
 }

@@ -5,10 +5,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/craiggwilson/teacomps"
+	"github.com/craiggwilson/teakwood"
 )
 
-func New(orientation Orientation, lengths []Length, children []teacomps.Visual) Model {
+func New(orientation Orientation, lengths []Length, children []teakwood.Visual) Model {
 	return Model{
 		orientation: orientation,
 		lengths:     lengths,
@@ -27,13 +27,13 @@ type Model struct {
 	orientation Orientation
 	position    lipgloss.Position
 
-	children []teacomps.Visual
+	children []teakwood.Visual
 	lengths  []Length
 
-	bounds teacomps.Rectangle
+	bounds teakwood.Rectangle
 }
 
-func (m Model) Children() []teacomps.Visual {
+func (m Model) Children() []teakwood.Visual {
 	return m.children
 }
 
@@ -53,7 +53,7 @@ func (m Model) Orientation() Orientation {
 	return m.orientation
 }
 
-func (m *Model) SetChildren(children ...teacomps.Visual) {
+func (m *Model) SetChildren(children ...teakwood.Visual) {
 	m.children = children
 }
 
@@ -74,14 +74,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	for i, child := range m.children {
 		newChild, cmd := child.Update(msg)
-		m.children[i] = newChild.(teacomps.Visual)
+		m.children[i] = newChild.(teakwood.Visual)
 		cmds = append(cmds, cmd)
 	}
 
 	return m, tea.Batch(cmds...)
 }
 
-func (m Model) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
+func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 	m.bounds = bounds
 	return m
 }
@@ -153,7 +153,7 @@ func (m *Model) computeAbsoluteLengths() []int {
 
 		// Temporarily, we'll clear the bounds to indicate we'd like these to be autosized. They'll
 		// get set back later.
-		m.children[i] = m.children[i].UpdateBounds(teacomps.Rectangle{})
+		m.children[i] = m.children[i].UpdateBounds(teakwood.Rectangle{})
 
 		w, h := lipgloss.Size(m.children[i].View())
 		switch m.orientation {
@@ -186,11 +186,11 @@ func (m *Model) computeAbsoluteLengths() []int {
 	for i := range m.children {
 		switch m.orientation {
 		case Vertical:
-			childBounds := teacomps.NewRectangle(curX, curY, m.bounds.Width, absLengths[i])
+			childBounds := teakwood.NewRectangle(curX, curY, m.bounds.Width, absLengths[i])
 			m.children[i] = m.children[i].UpdateBounds(childBounds)
 			curY += absLengths[i]
 		case Horizontal:
-			childBounds := teacomps.NewRectangle(curX, curY, absLengths[i], m.bounds.Height)
+			childBounds := teakwood.NewRectangle(curX, curY, absLengths[i], m.bounds.Height)
 			m.children[i] = m.children[i].UpdateBounds(childBounds)
 			curX += absLengths[i]
 		}

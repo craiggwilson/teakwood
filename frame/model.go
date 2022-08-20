@@ -3,7 +3,7 @@ package frame
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/craiggwilson/teacomps"
+	"github.com/craiggwilson/teakwood"
 )
 
 func New(style lipgloss.Style, content tea.Model) Model {
@@ -17,7 +17,7 @@ type Model struct {
 	content tea.Model
 	style   lipgloss.Style
 
-	bounds teacomps.Rectangle
+	bounds teakwood.Rectangle
 }
 
 func (m Model) Init() tea.Cmd {
@@ -39,7 +39,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
+func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 	m.bounds = bounds
 	m.applyBoundsToStyleAndContent()
 	return m
@@ -56,8 +56,8 @@ func (m *Model) applyBoundsToStyleAndContent() {
 	rightFrame := m.style.GetMarginRight() + m.style.GetPaddingRight() + m.style.GetBorderRightSize()
 
 	m.style = m.style.Width(m.bounds.Width - leftFrame - rightFrame).Height(m.bounds.Height - topFrame - bottomFrame)
-	if c, ok := m.content.(teacomps.Visual); ok {
-		m.content = c.UpdateBounds(teacomps.NewRectangle(
+	if c, ok := m.content.(teakwood.Visual); ok {
+		m.content = c.UpdateBounds(teakwood.NewRectangle(
 			m.bounds.X+leftFrame,
 			m.bounds.Y+topFrame,
 			m.bounds.Width-leftFrame-rightFrame,

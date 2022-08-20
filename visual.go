@@ -1,4 +1,4 @@
-package teacomps
+package teakwood
 
 import tea "github.com/charmbracelet/bubbletea"
 

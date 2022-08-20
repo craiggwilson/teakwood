@@ -3,11 +3,11 @@ package main
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/craiggwilson/teacomps/examples"
-	"github.com/craiggwilson/teacomps/frame"
-	"github.com/craiggwilson/teacomps/label"
-	"github.com/craiggwilson/teacomps/named"
-	"github.com/craiggwilson/teacomps/stack"
+	"github.com/craiggwilson/teakwood/examples"
+	"github.com/craiggwilson/teakwood/frame"
+	"github.com/craiggwilson/teakwood/label"
+	"github.com/craiggwilson/teakwood/named"
+	"github.com/craiggwilson/teakwood/stack"
 )
 
 const rootName = "root"

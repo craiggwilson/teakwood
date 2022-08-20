@@ -2,7 +2,7 @@ package named
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/craiggwilson/teacomps"
+	"github.com/craiggwilson/teakwood"
 )
 
 func New(name string, content tea.Model) Model {
@@ -39,8 +39,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m Model) UpdateBounds(bounds teacomps.Rectangle) teacomps.Visual {
-	if c, ok := m.content.(teacomps.Visual); ok {
+func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
+	if c, ok := m.content.(teakwood.Visual); ok {
 		m.content = c.UpdateBounds(bounds)
 	}
 

@@ -2,7 +2,7 @@ package adapter
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/craiggwilson/teacomps"
+	"github.com/craiggwilson/teakwood"
 )
 
 type Opt[T any] func(*Model[T])
@@ -19,7 +19,7 @@ func WithUpdate[T any](f func(T, tea.Msg) (T, tea.Cmd)) Opt[T] {
 	}
 }
 
-func WithUpdateBounds[T any](f func(T, teacomps.Rectangle) T) Opt[T] {
+func WithUpdateBounds[T any](f func(T, teakwood.Rectangle) T) Opt[T] {
 	return func(m *Model[T]) {
 		m.updateBounds = f
 	}
