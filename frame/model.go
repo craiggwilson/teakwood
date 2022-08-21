@@ -6,11 +6,16 @@ import (
 	"github.com/craiggwilson/teakwood"
 )
 
-func New(style lipgloss.Style, content tea.Model) Model {
-	return Model{
+func New(content tea.Model, opts ...Opt) Model {
+	m := Model{
 		content: content,
-		style:   style,
 	}
+
+	for _, opt := range opts {
+		opt(&m)
+	}
+
+	return m
 }
 
 type Model struct {
@@ -22,6 +27,10 @@ type Model struct {
 
 func (m Model) Init() tea.Cmd {
 	return m.content.Init()
+}
+
+func (m *Model) SetContent(content tea.Model) {
+	m.content = content
 }
 
 func (m *Model) SetStyle(style lipgloss.Style) {

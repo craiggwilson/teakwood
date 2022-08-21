@@ -1,4 +1,4 @@
-package pstack
+package stack
 
 func Absolute(v int) Length {
 	return Length{

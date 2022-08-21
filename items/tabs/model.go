@@ -6,27 +6,28 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/craiggwilson/teakwood"
+	"github.com/craiggwilson/teakwood/items"
 )
 
-func New(tabs ...tea.Model) Model {
-	return Model{
-		tabs:   tabs,
-		styles: DefaultStyles(),
+func New(itemsSource items.Source, opts ...Opt) Model {
+	m := Model{
+		itemsSource: itemsSource,
+		styles:      DefaultStyles(),
 	}
+
+	for _, opt := range opts {
+		opt(&m)
+	}
+
+	return m
 }
 
 type Model struct {
-	tabs []tea.Model
-
-	currentTab int
-
-	styles Styles
-
-	bounds teakwood.Rectangle
-}
-
-func (m *Model) AddTab(v tea.Model) {
-	m.tabs = append(m.tabs, v)
+	bounds      teakwood.Rectangle
+	currentTab  int
+	items       []tea.Model
+	itemsSource items.Source
+	styles      Styles
 }
 
 func (m Model) CurrentTab() int {
@@ -37,13 +38,8 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) InsertTab(v int, tab tea.Model) {
-	m.tabs = append(m.tabs[:v+1], m.tabs[v:]...)
-	m.tabs[v] = tab
-}
-
 func (m *Model) NextTab() {
-	if m.currentTab+1 < len(m.tabs) {
+	if m.currentTab+1 < m.itemsSource.Len() {
 		m.currentTab++
 	}
 }
@@ -54,19 +50,19 @@ func (m *Model) PrevTab() {
 	}
 }
 
-func (m *Model) RemoveTab(v int) {
-	m.tabs = append(m.tabs[:v], m.tabs[v+1:]...)
-}
-
 func (m *Model) SetCurrentTab(v int) {
 	switch {
 	case v < 0:
 		m.currentTab = 0
-	case v >= len(m.tabs):
-		m.currentTab = len(m.tabs) - 1
+	case v >= m.itemsSource.Len():
+		m.currentTab = m.itemsSource.Len() - 1
 	default:
 		m.currentTab = v
 	}
+}
+
+func (m *Model) SetItemsSource(itemsSource items.Source) {
+	m.itemsSource = itemsSource
 }
 
 func (m *Model) SetStyles(styles Styles) {
@@ -74,10 +70,11 @@ func (m *Model) SetStyles(styles Styles) {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
 	var cmds []tea.Cmd
-	for i, tab := range m.tabs {
-		m.tabs[i], cmd = tab.Update(msg)
+	var cmd tea.Cmd
+	m.items = make([]tea.Model, m.itemsSource.Len())
+	for i := 0; i < m.itemsSource.Len(); i++ {
+		m.items[i], cmd = m.itemsSource.Item(i).Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
@@ -90,9 +87,9 @@ func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 }
 
 func (m Model) View() string {
-	views := make([]string, len(m.tabs))
-	for i, tab := range m.tabs {
-		view := tab.View()
+	views := make([]string, len(m.items))
+	for i := 0; i < len(views); i++ {
+		view := m.items[i].View()
 		if m.currentTab == i {
 			view = m.styles.SelectedTab.Render(view)
 		} else {
