@@ -61,6 +61,35 @@ func (m documentTitles) Item(idx int) tea.Model {
 	return label.New((*m.documents)[idx].title)
 }
 
+type hoverLabel struct {
+	text string
+
+	hovering bool
+	bounds   teakwood.Rectangle
+}
+
+func (m hoverLabel) Init() tea.Cmd { return nil }
+
+func (m hoverLabel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch tmsg := msg.(type) {
+	case tea.MouseMsg:
+		switch tmsg.Type {
+		case tea.MouseMotion:
+			m.hovering = m.bounds.Contains(tmsg.X, tmsg.Y)
+		}
+	}
+
+	return m, nil
+}
+
+func (m hoverLabel) View() string {
+	if m.hovering {
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Render(m.text)
+	}
+
+	return m.text
+}
+
 type mainModel struct {
 	root   tea.Model
 	keyMap *keyMap

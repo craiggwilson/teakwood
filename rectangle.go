@@ -31,3 +31,7 @@ func (r *Rectangle) Right() int {
 func (r *Rectangle) Top() int {
 	return r.Y
 }
+
+func (r *Rectangle) Contains(x, y int) bool {
+	return x >= r.Left() && x <= r.Right() && y >= r.Top() && y <= r.Bottom()
+}
