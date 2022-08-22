@@ -6,13 +6,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/craiggwilson/teakwood"
-	"github.com/craiggwilson/teakwood/items"
 )
 
-func New(items items.Source, opts ...Opt) Model {
-	m := Model{
-		itemsSource: items,
-	}
+func New(opts ...Opt) Model {
+	var m Model
 
 	for _, opt := range opts {
 		opt(&m)
@@ -31,7 +28,6 @@ const (
 type Model struct {
 	bounds      teakwood.Rectangle
 	items       []tea.Model
-	itemsSource items.Source
 	styles      Styles
 	orientation Orientation
 	position    lipgloss.Position
@@ -58,8 +54,8 @@ func (m *Model) SetPosition(position lipgloss.Position) {
 	m.position = position
 }
 
-func (m *Model) SetItemsSource(itemsSource items.Source) {
-	m.itemsSource = itemsSource
+func (m *Model) SetItems(items ...tea.Model) {
+	m.items = items
 }
 
 func (m *Model) SetWrapping(wrapping bool) {
@@ -69,9 +65,8 @@ func (m *Model) SetWrapping(wrapping bool) {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
-	m.items = make([]tea.Model, m.itemsSource.Len())
-	for i := 0; i < m.itemsSource.Len(); i++ {
-		m.items[i], cmd = m.itemsSource.Item(i).Update(msg)
+	for i := 0; i < len(m.items); i++ {
+		m.items[i], cmd = m.items[i].Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
@@ -102,7 +97,7 @@ func (m Model) viewHorizontal() string {
 	groupStyle := m.styles.Group.Copy().Width(m.bounds.Width)
 
 	var rows []string
-	views := make([]string, 0, m.itemsSource.Len())
+	views := make([]string, 0, len(m.items))
 	curWidth := 0
 	for i := 0; i < len(m.items); i++ {
 		view := m.styles.Item.Render(m.items[i].View())
@@ -129,7 +124,7 @@ func (m Model) viewVertical() string {
 	groupStyle := m.styles.Group
 
 	var cols []string
-	views := make([]string, 0, m.itemsSource.Len())
+	views := make([]string, 0, len(m.items))
 	curHeight := 0
 	for i := 0; i < len(m.items); i++ {
 		view := m.styles.Item.Render(m.items[i].View())

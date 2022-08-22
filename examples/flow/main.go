@@ -6,9 +6,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/craiggwilson/teakwood"
+	"github.com/craiggwilson/teakwood/adapter"
 	"github.com/craiggwilson/teakwood/examples"
-	"github.com/craiggwilson/teakwood/items"
-	"github.com/craiggwilson/teakwood/items/flow"
+	"github.com/craiggwilson/teakwood/flow"
+	"github.com/craiggwilson/teakwood/label"
 	"github.com/craiggwilson/teakwood/named"
 )
 
@@ -16,7 +17,7 @@ const rootName = "root"
 
 type mainModel struct {
 	root  tea.Model
-	items items.StringsSource
+	items []tea.Model
 }
 
 func (m mainModel) Init() tea.Cmd {
@@ -39,16 +40,16 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return f, nil
 			}))
 		case "up":
-			m.items = append(m.items, "Item "+strconv.Itoa(len(m.items)+1))
+			m.items = append(m.items, label.New("Item "+strconv.Itoa(len(m.items)+1)))
 			cmds = append(cmds, named.Update(rootName, func(f flow.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
-				f.SetItemsSource(m.items)
+				f.SetItems(m.items...)
 				return f, nil
 			}))
 		case "down":
 			if len(m.items) > 0 {
 				m.items = m.items[:len(m.items)-1]
 				cmds = append(cmds, named.Update(rootName, func(f flow.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
-					f.SetItemsSource(m.items)
+					f.SetItems(m.items...)
 					return f, nil
 				}))
 			}
@@ -71,11 +72,12 @@ func (m mainModel) View() string {
 }
 
 func main() {
-	items := items.StringsSource{"Item 1", "Item 2", "Item 3"}
+	items := adapter.Strings("Item 1", "Item 2", "Item 3")
 
 	mdl := mainModel{
 		items: items,
-		root: named.New(rootName, flow.New(items,
+		root: named.New(rootName, flow.New(
+			flow.WithItems(items...),
 			flow.WithWrapping(true),
 			flow.WithPosition(0),
 			flow.WithStyles(flow.Styles{

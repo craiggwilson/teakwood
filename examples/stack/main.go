@@ -9,10 +9,10 @@ import (
 	"github.com/craiggwilson/teakwood/adapter"
 	"github.com/craiggwilson/teakwood/examples"
 	"github.com/craiggwilson/teakwood/frame"
-	"github.com/craiggwilson/teakwood/items/tabs"
 	"github.com/craiggwilson/teakwood/label"
 	"github.com/craiggwilson/teakwood/named"
 	"github.com/craiggwilson/teakwood/stack"
+	"github.com/craiggwilson/teakwood/tabs"
 )
 
 const rootName = "root"
@@ -43,51 +43,6 @@ func (m *keyMap) FullHelp() [][]key.Binding {
 type document struct {
 	title   string
 	content string
-}
-
-func (d *document) View() string {
-	return d.content
-}
-
-type documentTitles struct {
-	documents *[]document
-}
-
-func (m documentTitles) Len() int {
-	return len(*m.documents)
-}
-
-func (m documentTitles) Item(idx int) tea.Model {
-	return label.New((*m.documents)[idx].title)
-}
-
-type hoverLabel struct {
-	text string
-
-	hovering bool
-	bounds   teakwood.Rectangle
-}
-
-func (m hoverLabel) Init() tea.Cmd { return nil }
-
-func (m hoverLabel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch tmsg := msg.(type) {
-	case tea.MouseMsg:
-		switch tmsg.Type {
-		case tea.MouseMotion:
-			m.hovering = m.bounds.Contains(tmsg.X, tmsg.Y)
-		}
-	}
-
-	return m, nil
-}
-
-func (m hoverLabel) View() string {
-	if m.hovering {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Render(m.text)
-	}
-
-	return m.text
 }
 
 type mainModel struct {
@@ -124,21 +79,19 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(tmsg, m.keyMap.PrevPage):
 			cmds = append(cmds, named.Update(tabsName, func(tabs tabs.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				tabs.PrevTab()
-				return tabs, named.Update(currentContent, func(a adapter.Model[document], msg tea.Msg) (tea.Model, tea.Cmd) {
-					a.UpdateAdaptee(func(document) document {
-						return m.documents[tabs.CurrentTab()]
-					})
-					return a, nil
+				doc := m.documents[tabs.CurrentTab()]
+				return tabs, named.Update(currentContent, func(f frame.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+					f.SetContent(label.New(doc.content))
+					return f, nil
 				})
 			}))
 		case key.Matches(tmsg, m.keyMap.NextPage):
 			cmds = append(cmds, named.Update(tabsName, func(tabs tabs.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				tabs.NextTab()
-				return tabs, named.Update(currentContent, func(a adapter.Model[document], msg tea.Msg) (tea.Model, tea.Cmd) {
-					a.UpdateAdaptee(func(document) document {
-						return m.documents[tabs.CurrentTab()]
-					})
-					return a, nil
+				doc := m.documents[tabs.CurrentTab()]
+				return tabs, named.Update(currentContent, func(f frame.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+					f.SetContent(label.New(doc.content))
+					return f, nil
 				})
 			}))
 		}
@@ -185,6 +138,8 @@ func main() {
 		{title: "Page 2", content: "Page 2 Content"},
 	}
 
+	tabItems := adapter.Strings(mdl.documents[0].title, mdl.documents[1].title)
+
 	mdl.root = named.New(rootName, stack.New(
 		stack.Vertical,
 		[]stack.Length{stack.Absolute(3), stack.Proportional(1), stack.Auto()},
@@ -206,10 +161,8 @@ func main() {
 							stack.Vertical,
 							[]stack.Length{stack.Auto(), stack.Proportional(1)},
 							[]teakwood.Visual{
-								named.New(tabsName, tabs.New(documentTitles{&mdl.documents})),
-								named.New(currentContent, adapter.New(mdl.documents[0], adapter.WithView(func(d document) string {
-									return d.View()
-								}))),
+								named.New(tabsName, tabs.New(tabs.WithItems(tabItems...))),
+								named.New(currentContent, frame.New(label.New(mdl.documents[0].content))),
 							},
 						),
 						frame.WithStyle(lipgloss.NewStyle().Margin(0)),

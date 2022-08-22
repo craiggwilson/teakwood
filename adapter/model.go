@@ -26,6 +26,10 @@ type Model[T any] struct {
 	view         func(T) string
 }
 
+func (m Model[T]) Adaptee() T {
+	return m.adaptee
+}
+
 func (m Model[T]) Init() tea.Cmd {
 	if m.init != nil {
 		return m.init(m.adaptee)

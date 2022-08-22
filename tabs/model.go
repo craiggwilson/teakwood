@@ -6,13 +6,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/craiggwilson/teakwood"
-	"github.com/craiggwilson/teakwood/items"
 )
 
-func New(itemsSource items.Source, opts ...Opt) Model {
+func New(opts ...Opt) Model {
 	m := Model{
-		itemsSource: itemsSource,
-		styles:      DefaultStyles(),
+		styles: DefaultStyles(),
 	}
 
 	for _, opt := range opts {
@@ -23,11 +21,10 @@ func New(itemsSource items.Source, opts ...Opt) Model {
 }
 
 type Model struct {
-	bounds      teakwood.Rectangle
-	currentTab  int
-	items       []tea.Model
-	itemsSource items.Source
-	styles      Styles
+	bounds     teakwood.Rectangle
+	currentTab int
+	items      []tea.Model
+	styles     Styles
 }
 
 func (m Model) CurrentTab() int {
@@ -38,8 +35,12 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
+func (m Model) Items() []tea.Model {
+	return m.items
+}
+
 func (m *Model) NextTab() {
-	if m.currentTab+1 < m.itemsSource.Len() {
+	if m.currentTab+1 < len(m.items) {
 		m.currentTab++
 	}
 }
@@ -54,15 +55,15 @@ func (m *Model) SetCurrentTab(v int) {
 	switch {
 	case v < 0:
 		m.currentTab = 0
-	case v >= m.itemsSource.Len():
-		m.currentTab = m.itemsSource.Len() - 1
+	case v >= len(m.items):
+		m.currentTab = len(m.items) - 1
 	default:
 		m.currentTab = v
 	}
 }
 
-func (m *Model) SetItemsSource(itemsSource items.Source) {
-	m.itemsSource = itemsSource
+func (m *Model) SetItems(items ...tea.Model) {
+	m.items = items
 }
 
 func (m *Model) SetStyles(styles Styles) {
@@ -72,9 +73,8 @@ func (m *Model) SetStyles(styles Styles) {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
-	m.items = make([]tea.Model, m.itemsSource.Len())
-	for i := 0; i < m.itemsSource.Len(); i++ {
-		m.items[i], cmd = m.itemsSource.Item(i).Update(msg)
+	for i := 0; i < len(m.items); i++ {
+		m.items[i], cmd = m.items[i].Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
