@@ -59,18 +59,7 @@ func (m Model) View() string {
 }
 
 func (m *Model) applyBoundsToStyleAndContent() {
-	topFrame := m.style.GetMarginTop() + m.style.GetPaddingTop() + m.style.GetBorderTopWidth()
-	bottomFrame := m.style.GetMarginBottom() + m.style.GetPaddingBottom() + m.style.GetBorderBottomSize()
-	leftFrame := m.style.GetMarginLeft() + m.style.GetPaddingLeft() + m.style.GetBorderLeftSize()
-	rightFrame := m.style.GetMarginRight() + m.style.GetPaddingRight() + m.style.GetBorderRightSize()
-
-	m.style = m.style.Width(m.bounds.Width - leftFrame - rightFrame).Height(m.bounds.Height - topFrame - bottomFrame)
-	if c, ok := m.content.(teakwood.Visual); ok {
-		m.content = c.UpdateBounds(teakwood.NewRectangle(
-			m.bounds.X+leftFrame,
-			m.bounds.Y+topFrame,
-			m.bounds.Width-leftFrame-rightFrame,
-			m.bounds.Height-topFrame-bottomFrame,
-		))
-	}
+	offsets := teakwood.OffsetsFromStyle(m.style)
+	m.style = m.style.Width(m.bounds.Width - offsets.Width).Height(m.bounds.Height - offsets.Height)
+	m.content = teakwood.UpdateBounds(m.content, m.bounds.Offset(offsets))
 }

@@ -8,118 +8,99 @@ import (
 	"github.com/craiggwilson/teakwood"
 )
 
-func New(orientation Orientation, lengths []Length, children []teakwood.Visual) Model {
-	return Model{
-		orientation: orientation,
-		lengths:     lengths,
-		children:    children,
+func New(opts ...Opt) Model {
+	var m Model
+
+	for _, opt := range opts {
+		opt(&m)
 	}
+
+	return m
 }
 
 type Orientation int
 
 const (
-	Vertical Orientation = iota
-	Horizontal
+	Horizontal Orientation = iota
+	Vertical
 )
 
 type Model struct {
+	bounds      teakwood.Rectangle
+	items       []Item
 	orientation Orientation
 	position    lipgloss.Position
 
-	children []teakwood.Visual
-	lengths  []Length
-
-	bounds teakwood.Rectangle
+	itemViews []string
 }
 
-func (m Model) Children() []teakwood.Visual {
-	return m.children
+func (m Model) Items() []Item {
+	return m.items
 }
 
 func (m Model) Init() tea.Cmd {
 	var cmds []tea.Cmd
-	for _, child := range m.children {
-		cmds = append(cmds, child.Init())
+	for _, child := range m.items {
+		cmds = append(cmds, child.init())
 	}
 	return tea.Batch(cmds...)
-}
-
-func (m Model) Lengths() []Length {
-	return m.lengths
 }
 
 func (m Model) Orientation() Orientation {
 	return m.orientation
 }
 
-func (m *Model) SetChildren(children ...teakwood.Visual) {
-	m.children = children
-}
-
-func (m *Model) SetLengths(lengths ...Length) {
-	m.lengths = lengths
+func (m *Model) SetItems(items ...Item) {
+	m.items = items
+	m.renderItems()
 }
 
 func (m *Model) SetOrientation(orientation Orientation) {
 	m.orientation = orientation
+	m.renderItems()
 }
 
 func (m *Model) SetPosition(position lipgloss.Position) {
 	m.position = position
+	m.renderItems()
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
-	for i, child := range m.children {
-		newChild, cmd := child.Update(msg)
-		m.children[i] = newChild.(teakwood.Visual)
+	for i, item := range m.items {
+		m.items[i], cmd = item.update(msg)
 		cmds = append(cmds, cmd)
 	}
+
+	m.renderItems()
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 	m.bounds = bounds
+	m.renderItems()
 	return m
 }
 
 func (m Model) View() string {
-	absLengths := m.computeAbsoluteLengths()
-
-	views := make([]string, len(m.children))
-	if len(absLengths) > 0 {
-		for i, child := range m.children {
-			s := lipgloss.NewStyle()
-			switch m.orientation {
-			case Vertical:
-				s = s.MaxWidth(m.bounds.Width).MaxHeight(absLengths[i])
-			case Horizontal:
-				s = s.MaxHeight(m.bounds.Height).MaxWidth(absLengths[i])
-			}
-
-			views[i] = s.Render(child.View())
-		}
-	} else {
-		for i, child := range m.children {
-			views[i] = child.View()
-		}
-	}
-
 	switch m.orientation {
 	case Vertical:
-		return lipgloss.JoinVertical(m.position, views...)
+		return lipgloss.JoinVertical(m.position, m.itemViews...)
 	case Horizontal:
-		return lipgloss.JoinHorizontal(m.position, views...)
+		return lipgloss.JoinHorizontal(m.position, m.itemViews...)
 	default:
 		panic(fmt.Sprintf("unknown orientation: %v", m.orientation))
 	}
 }
 
-func (m *Model) computeAbsoluteLengths() []int {
-	absLengths := make([]int, len(m.lengths))
+func (m *Model) renderItems() {
+	absLengths := make([]int, len(m.items))
+	if len(m.itemViews) != len(m.items) {
+		m.itemViews = make([]string, len(m.items))
+	}
 
 	var remaining int
 	switch m.orientation {
@@ -129,33 +110,33 @@ func (m *Model) computeAbsoluteLengths() []int {
 		remaining = m.bounds.Width
 	}
 
-	proportionalCount := 0
+	var proportionalCount int
 	// 1) account for absolute views.
-	for i, length := range m.lengths {
-		if length.IsAuto() {
+	for i, item := range m.items {
+		if item.Length.IsAuto() {
 			continue
 		}
 
-		switch length.Unit {
+		switch item.Length.Unit {
 		case UnitAbsolute:
-			remaining -= length.Value
-			absLengths[i] = length.Value
+			remaining -= item.Length.Value
+			absLengths[i] = item.Length.Value
 		case UnitProportional:
-			proportionalCount += length.Value
+			proportionalCount += item.Length.Value
 		}
 	}
 
 	// 2) account for auto views.
-	for i, length := range m.lengths {
-		if !length.IsAuto() {
+	for i, item := range m.items {
+		if !item.Length.IsAuto() {
 			continue
 		}
 
 		// Temporarily, we'll clear the bounds to indicate we'd like these to be autosized. They'll
 		// get set back later.
-		m.children[i] = m.children[i].UpdateBounds(teakwood.Rectangle{})
+		m.items[i] = m.items[i].updateBounds(teakwood.Rectangle{})
 
-		w, h := lipgloss.Size(m.children[i].View())
+		w, h := lipgloss.Size(m.items[i].view())
 		switch m.orientation {
 		case Vertical:
 			remaining -= h
@@ -167,34 +148,38 @@ func (m *Model) computeAbsoluteLengths() []int {
 	}
 
 	// 3) account for proportional views.
-	for i, length := range m.lengths {
-		if length.IsAuto() {
+	for i, item := range m.items {
+		if item.Length.IsAuto() {
 			continue
 		}
 
-		switch length.Unit {
+		switch item.Length.Unit {
 		case UnitProportional:
-			abs := length.Value * remaining / proportionalCount
+			abs := item.Length.Value * remaining / proportionalCount
 			remaining -= abs
-			proportionalCount -= length.Value
+			proportionalCount -= item.Length.Value
 			absLengths[i] = abs
 		}
 	}
 
 	curX := m.bounds.X
 	curY := m.bounds.Y
-	for i := range m.children {
+	for i := range m.items {
+		var itemStyle lipgloss.Style
+
 		switch m.orientation {
 		case Vertical:
 			childBounds := teakwood.NewRectangle(curX, curY, m.bounds.Width, absLengths[i])
-			m.children[i] = m.children[i].UpdateBounds(childBounds)
+			m.items[i] = m.items[i].updateBounds(childBounds)
 			curY += absLengths[i]
+			itemStyle = lipgloss.NewStyle().MaxWidth(m.bounds.Width).MaxHeight(absLengths[i])
 		case Horizontal:
 			childBounds := teakwood.NewRectangle(curX, curY, absLengths[i], m.bounds.Height)
-			m.children[i] = m.children[i].UpdateBounds(childBounds)
+			m.items[i] = m.items[i].updateBounds(childBounds)
 			curX += absLengths[i]
+			itemStyle = lipgloss.NewStyle().MaxHeight(m.bounds.Height).MaxWidth(absLengths[i])
 		}
-	}
 
-	return absLengths
+		m.itemViews[i] = itemStyle.Render(m.items[i].view())
+	}
 }

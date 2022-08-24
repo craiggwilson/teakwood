@@ -21,8 +21,8 @@ func New(opts ...Opt) Model {
 type Orientation int
 
 const (
-	Vertical Orientation = iota
-	Horizontal
+	Horizontal Orientation = iota
+	Vertical
 )
 
 type Model struct {
@@ -32,10 +32,29 @@ type Model struct {
 	orientation Orientation
 	position    lipgloss.Position
 	wrapping    bool
+
+	itemViews []string
+}
+
+func (m *Model) AddItem(page tea.Model) {
+	m.items = append(m.items, page)
 }
 
 func (m Model) Init() tea.Cmd {
 	return nil
+}
+
+func (m *Model) InsertItem(index int, page tea.Model) {
+	m.items = append(m.items[:index+1], m.items[index:]...)
+	m.items[index] = page
+}
+
+func (m Model) Items() []tea.Model {
+	return m.items
+}
+
+func (m Model) Len() int {
+	return len(m.items)
 }
 
 func (m Model) Orientation() Orientation {
@@ -44,6 +63,10 @@ func (m Model) Orientation() Orientation {
 
 func (m Model) Position() lipgloss.Position {
 	return m.position
+}
+
+func (m *Model) RemoveItem(index int) {
+	m.items = append(m.items[:index], m.items[index+1:]...)
 }
 
 func (m *Model) SetOrientation(orientation Orientation) {
@@ -81,9 +104,9 @@ func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 func (m Model) View() string {
 	switch m.orientation {
 	case Vertical:
-		return m.viewVertical()
+		return m.renderVertical()
 	case Horizontal:
-		return m.viewHorizontal()
+		return m.renderHorizontal()
 	default:
 		panic(fmt.Sprintf("unknown orientation: %v", m.orientation))
 	}
@@ -93,58 +116,72 @@ func (m Model) Wrapping() bool {
 	return m.wrapping
 }
 
-func (m Model) viewHorizontal() string {
+func (m *Model) renderHorizontal() string {
+	if cap(m.itemViews) != cap(m.items) {
+		m.itemViews = make([]string, 0, len(m.items))
+	}
+	m.itemViews = m.itemViews[:0]
+
 	groupStyle := m.styles.Group.Copy().Width(m.bounds.Width)
 
 	var rows []string
-	views := make([]string, 0, len(m.items))
-	curWidth := 0
-	for i := 0; i < len(m.items); i++ {
+
+	curWidth := groupStyle.GetHorizontalFrameSize()
+	for i := range m.items {
 		view := m.styles.Item.Render(m.items[i].View())
-		viewWidth := lipgloss.Width(view)
-		if !m.wrapping || m.bounds.Width == 0 || curWidth+viewWidth < m.bounds.Width {
-			views = append(views, view)
-			curWidth += viewWidth
+		w := lipgloss.Width(view)
+
+		if !m.wrapping || m.bounds.Width == 0 || curWidth+w < m.bounds.Width {
+			m.itemViews = append(m.itemViews, view)
+			curWidth += w
 		} else {
-			rows = append(rows, groupStyle.Render(lipgloss.JoinHorizontal(m.position, views...)))
-			views = views[:1]
-			views[0] = view
-			curWidth = viewWidth
+			rowView := groupStyle.Render(lipgloss.JoinHorizontal(m.position, m.itemViews...))
+			rows = append(rows, rowView)
+
+			m.itemViews = m.itemViews[:1]
+			m.itemViews[0] = view
+			curWidth = groupStyle.GetHorizontalFrameSize() + w
 		}
 	}
 
-	if len(views) > 0 {
-		rows = append(rows, groupStyle.Render(lipgloss.JoinHorizontal(m.position, views...)))
+	if len(m.itemViews) > 0 {
+		rows = append(rows, groupStyle.Render(lipgloss.JoinHorizontal(m.position, m.itemViews...)))
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, rows...)
 }
 
-func (m Model) viewVertical() string {
+func (m *Model) renderVertical() string {
+	if cap(m.itemViews) != cap(m.items) {
+		m.itemViews = make([]string, 0, len(m.items))
+	}
+	m.itemViews = m.itemViews[:0]
+
 	groupStyle := m.styles.Group
 
 	var cols []string
-	views := make([]string, 0, len(m.items))
-	curHeight := 0
+
+	curHeight := groupStyle.GetVerticalFrameSize()
 	for i := 0; i < len(m.items); i++ {
 		view := m.styles.Item.Render(m.items[i].View())
-		viewHeight := lipgloss.Height(view)
+		h := lipgloss.Height(view)
 
-		if !m.wrapping || m.bounds.Height == 0 || curHeight+viewHeight < m.bounds.Height {
-			views = append(views, view)
-			curHeight += viewHeight
+		if !m.wrapping || m.bounds.Height == 0 || curHeight+h < m.bounds.Height {
+			m.itemViews = append(m.itemViews, view)
+			curHeight += h
 		} else {
-			col := groupStyle.Render(lipgloss.JoinVertical(m.position, views...))
-			cols = append(cols, lipgloss.PlaceVertical(m.bounds.Height, groupStyle.GetAlign(), col))
-			views = views[:1]
-			views[0] = view
-			curHeight = viewHeight
+			colView := groupStyle.Render(lipgloss.PlaceVertical(m.bounds.Height, groupStyle.GetAlign(), lipgloss.JoinVertical(m.position, m.itemViews...)))
+			cols = append(cols, colView)
+
+			m.itemViews = m.itemViews[:1]
+			m.itemViews[0] = view
+			curHeight = groupStyle.GetVerticalFrameSize() + h
 		}
 	}
 
-	if len(views) > 0 {
-		col := groupStyle.Render(lipgloss.JoinVertical(m.position, views...))
-		cols = append(cols, lipgloss.PlaceVertical(m.bounds.Height, groupStyle.GetAlign(), col))
+	if len(m.itemViews) > 0 {
+		colView := groupStyle.Render(lipgloss.PlaceVertical(m.bounds.Height, groupStyle.GetAlign(), lipgloss.JoinVertical(m.position, m.itemViews...)))
+		cols = append(cols, colView)
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, cols...)

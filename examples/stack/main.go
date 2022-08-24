@@ -110,6 +110,38 @@ func (m mainModel) View() string {
 	return m.root.View()
 }
 
+type hoverLabelModel struct {
+	text  string
+	hover bool
+
+	bounds teakwood.Rectangle
+}
+
+func (m hoverLabelModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m hoverLabelModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch tmsg := msg.(type) {
+	case tea.MouseMsg:
+		switch tmsg.Type {
+		case tea.MouseMotion:
+			m.hover = m.bounds.Contains(tmsg.X, tmsg.Y)
+		}
+	}
+
+	return m, nil
+}
+
+func (m hoverLabelModel) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
+	m.bounds = bounds
+	return m
+}
+
+func (m hoverLabelModel) View() string {
+	return lipgloss.NewStyle().Underline(m.hover).Render(m.text)
+}
+
 func main() {
 	km := keyMap{
 		Help:     key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
@@ -138,47 +170,68 @@ func main() {
 		{title: "Page 2", content: "Page 2 Content"},
 	}
 
-	tabItems := adapter.Strings(mdl.documents[0].title, mdl.documents[1].title)
+	tabItems := []tea.Model{
+		hoverLabelModel{text: mdl.documents[0].title},
+		hoverLabelModel{text: mdl.documents[1].title},
+	}
 
-	mdl.root = named.New(rootName, stack.New(
-		stack.Vertical,
-		[]stack.Length{stack.Absolute(3), stack.Proportional(1), stack.Auto()},
-		[]teakwood.Visual{
-			frame.New(
-				label.New("Header"),
-				frame.WithStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("1")).Border(lipgloss.NormalBorder(), true).Align(.5)),
-			),
-			stack.New(
-				stack.Horizontal,
-				[]stack.Length{stack.Absolute(30), stack.Proportional(6), stack.Proportional(1)},
-				[]teakwood.Visual{
+	mdl.root = named.New(
+		rootName,
+		stack.New(
+			stack.WithOrientation(stack.Vertical),
+			stack.WithItems(
+				stack.NewItem(
+					stack.Absolute(3),
 					frame.New(
-						label.New("Left"),
-						frame.WithStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("2")).Border(lipgloss.NormalBorder(), true)),
+						label.New("Header"),
+						frame.WithStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("1")).Border(lipgloss.NormalBorder(), true).Align(.5)),
 					),
-					frame.New(
-						stack.New(
-							stack.Vertical,
-							[]stack.Length{stack.Auto(), stack.Proportional(1)},
-							[]teakwood.Visual{
-								named.New(tabsName, tabs.New(tabs.WithItems(tabItems...))),
-								named.New(currentContent, frame.New(label.New(mdl.documents[0].content))),
-							},
+				),
+				stack.NewItem(
+					stack.Proportional(1),
+					stack.New(
+						stack.WithItems(
+							stack.NewItem(
+								stack.Absolute(30),
+								frame.New(
+									label.New("Left"),
+									frame.WithStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("2")).Border(lipgloss.NormalBorder(), true)),
+								),
+							),
+							stack.NewItem(
+								stack.Proportional(6),
+								stack.New(
+									stack.WithOrientation(stack.Vertical),
+									stack.WithItems(
+										stack.NewAutoItem(
+											named.New(tabsName, tabs.New(tabs.WithItems(tabItems...))),
+										),
+										stack.NewItem(
+											stack.Proportional(1),
+											named.New(currentContent, frame.New(label.New(mdl.documents[0].content))),
+										),
+									),
+								),
+							),
+							stack.NewItem(
+								stack.Proportional(1),
+								frame.New(
+									label.New("Right"),
+									frame.WithStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("4")).Border(lipgloss.NormalBorder(), true)),
+								),
+							),
 						),
-						frame.WithStyle(lipgloss.NewStyle().Margin(0)),
 					),
+				),
+				stack.NewAutoItem(
 					frame.New(
-						label.New("Right"),
-						frame.WithStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("4")).Border(lipgloss.NormalBorder(), true)),
+						named.New(helpName, helpAdapter),
+						frame.WithStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("5")).Border(lipgloss.NormalBorder(), true)),
 					),
-				},
+				),
 			),
-			frame.New(
-				named.New(helpName, helpAdapter),
-				frame.WithStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("5")).Border(lipgloss.NormalBorder(), true)),
-			),
-		}),
+		),
 	)
 
-	examples.Run(mdl, tea.WithAltScreen())
+	examples.Run(mdl, tea.WithAltScreen(), tea.WithMouseAllMotion())
 }

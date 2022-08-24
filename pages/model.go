@@ -5,22 +5,22 @@ import (
 	"github.com/craiggwilson/teakwood"
 )
 
-func New(pages ...tea.Model) Model {
+func New(items ...tea.Model) Model {
 	return Model{
-		pages: pages,
+		items: items,
 	}
 }
 
 type Model struct {
-	pages []tea.Model
+	items []tea.Model
 
 	currentPage int
 
 	bounds teakwood.Rectangle
 }
 
-func (m *Model) AddPage(page tea.Model) {
-	m.pages = append(m.pages, page)
+func (m *Model) AddItem(page tea.Model) {
+	m.items = append(m.items, page)
 }
 
 func (m Model) CurrentPage() int {
@@ -31,13 +31,21 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) InsertPage(index int, page tea.Model) {
-	m.pages = append(m.pages[:index+1], m.pages[index:]...)
-	m.pages[index] = page
+func (m *Model) InsertItem(index int, page tea.Model) {
+	m.items = append(m.items[:index+1], m.items[index:]...)
+	m.items[index] = page
+}
+
+func (m Model) Items() []tea.Model {
+	return m.items
+}
+
+func (m Model) Len() int {
+	return len(m.items)
 }
 
 func (m *Model) NextPage() {
-	if m.currentPage+1 < len(m.pages) {
+	if m.currentPage+1 < len(m.items) {
 		m.currentPage++
 	}
 }
@@ -48,26 +56,30 @@ func (m *Model) PrevPage() {
 	}
 }
 
-func (m *Model) RemovePage(index int) {
-	m.pages = append(m.pages[:index], m.pages[index+1:]...)
+func (m *Model) RemoveItem(index int) {
+	m.items = append(m.items[:index], m.items[index+1:]...)
 }
 
-func (m *Model) SetCurrentPage(v int) {
+func (m *Model) SetCurrentItem(v int) {
 	switch {
 	case v < 0:
 		m.currentPage = 0
-	case v >= len(m.pages):
-		m.currentPage = len(m.pages) - 1
+	case v >= len(m.items):
+		m.currentPage = len(m.items) - 1
 	default:
 		m.currentPage = v
 	}
 }
 
+func (m *Model) SetItems(items ...tea.Model) {
+	m.items = items
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
-	for i, page := range m.pages {
-		m.pages[i], cmd = page.Update(msg)
+	for i, page := range m.items {
+		m.items[i], cmd = page.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
@@ -76,15 +88,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 	m.bounds = bounds
-	for i, page := range m.pages {
-		if c, ok := page.(teakwood.Visual); ok {
-			m.pages[i] = c.UpdateBounds(bounds)
-		}
+	for i := range m.items {
+		m.items[i] = teakwood.UpdateBounds(m.items[i], m.bounds)
 	}
 
 	return m
 }
 
 func (m Model) View() string {
-	return m.pages[m.currentPage].View()
+	return m.items[m.currentPage].View()
 }

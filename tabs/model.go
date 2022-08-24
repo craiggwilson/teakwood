@@ -25,6 +25,12 @@ type Model struct {
 	currentTab int
 	items      []tea.Model
 	styles     Styles
+
+	itemViews []string
+}
+
+func (m *Model) AddItem(tab tea.Model) {
+	m.items = append(m.items, tab)
 }
 
 func (m Model) CurrentTab() int {
@@ -33,6 +39,11 @@ func (m Model) CurrentTab() int {
 
 func (m Model) Init() tea.Cmd {
 	return nil
+}
+
+func (m *Model) InsertItem(index int, page tea.Model) {
+	m.items = append(m.items[:index+1], m.items[index:]...)
+	m.items[index] = page
 }
 
 func (m Model) Items() []tea.Model {
@@ -51,7 +62,11 @@ func (m *Model) PrevTab() {
 	}
 }
 
-func (m *Model) SetCurrentTab(v int) {
+func (m *Model) RemoveItem(index int) {
+	m.items = append(m.items[:index], m.items[index+1:]...)
+}
+
+func (m *Model) SetCurrentItem(v int) {
 	switch {
 	case v < 0:
 		m.currentTab = 0
@@ -87,8 +102,12 @@ func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
 }
 
 func (m Model) View() string {
-	views := make([]string, len(m.items))
-	for i := 0; i < len(views); i++ {
+	if len(m.itemViews) != len(m.items) {
+		m.itemViews = make([]string, len(m.items))
+	}
+
+	for i := range m.items {
+
 		view := m.items[i].View()
 		if m.currentTab == i {
 			view = m.styles.SelectedTab.Render(view)
@@ -96,12 +115,12 @@ func (m Model) View() string {
 			view = m.styles.Tab.Render(view)
 		}
 
-		views[i] = view
+		m.itemViews[i] = view
 	}
 
-	view := lipgloss.JoinHorizontal(lipgloss.Top, views...)
-	filler := m.styles.Filler.Render(strings.Repeat(" ", max(0, m.bounds.Width-lipgloss.Width(view))))
-	return lipgloss.JoinHorizontal(lipgloss.Bottom, view, filler)
+	itemsView := lipgloss.JoinHorizontal(lipgloss.Top, m.itemViews...)
+	filler := m.styles.Filler.Render(strings.Repeat(" ", max(0, m.bounds.Width-lipgloss.Width(itemsView))))
+	return lipgloss.JoinHorizontal(lipgloss.Bottom, itemsView, filler)
 }
 
 func max(a, b int) int {
