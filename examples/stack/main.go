@@ -110,38 +110,6 @@ func (m mainModel) View() string {
 	return m.root.View()
 }
 
-type hoverLabelModel struct {
-	text  string
-	hover bool
-
-	bounds teakwood.Rectangle
-}
-
-func (m hoverLabelModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m hoverLabelModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch tmsg := msg.(type) {
-	case tea.MouseMsg:
-		switch tmsg.Type {
-		case tea.MouseMotion:
-			m.hover = m.bounds.Contains(tmsg.X, tmsg.Y)
-		}
-	}
-
-	return m, nil
-}
-
-func (m hoverLabelModel) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	m.bounds = bounds
-	return m
-}
-
-func (m hoverLabelModel) View() string {
-	return lipgloss.NewStyle().Underline(m.hover).Render(m.text)
-}
-
 func main() {
 	km := keyMap{
 		Help:     key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
@@ -171,8 +139,8 @@ func main() {
 	}
 
 	tabItems := []tea.Model{
-		hoverLabelModel{text: mdl.documents[0].title},
-		hoverLabelModel{text: mdl.documents[1].title},
+		label.New(mdl.documents[0].title),
+		label.New(mdl.documents[1].title),
 	}
 
 	mdl.root = named.New(

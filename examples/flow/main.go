@@ -8,6 +8,7 @@ import (
 	"github.com/craiggwilson/teakwood"
 	"github.com/craiggwilson/teakwood/examples"
 	"github.com/craiggwilson/teakwood/flow"
+	"github.com/craiggwilson/teakwood/label"
 	"github.com/craiggwilson/teakwood/named"
 )
 
@@ -38,7 +39,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}))
 		case "up":
 			cmds = append(cmds, named.Update(rootName, func(f flow.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
-				f.AddItem(hoverLabelModel{text: "Item " + strconv.Itoa(f.Len()+1)})
+				f.AddItem(label.New("Item " + strconv.Itoa(f.Len()+1)))
 				return f, nil
 			}))
 		case "down":
@@ -66,45 +67,13 @@ func (m mainModel) View() string {
 	return m.root.View() + "\n"
 }
 
-type hoverLabelModel struct {
-	text  string
-	hover bool
-
-	bounds teakwood.Rectangle
-}
-
-func (m hoverLabelModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m hoverLabelModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch tmsg := msg.(type) {
-	case tea.MouseMsg:
-		switch tmsg.Type {
-		case tea.MouseMotion:
-			m.hover = m.bounds.Contains(tmsg.X, tmsg.Y)
-		}
-	}
-
-	return m, nil
-}
-
-func (m hoverLabelModel) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	m.bounds = bounds
-	return m
-}
-
-func (m hoverLabelModel) View() string {
-	return lipgloss.NewStyle().Underline(m.hover).Render(m.text)
-}
-
 func main() {
 	mdl := mainModel{
 		root: named.New(rootName, flow.New(
 			flow.WithItems(
-				hoverLabelModel{text: "Item 1"},
-				hoverLabelModel{text: "Item 2"},
-				hoverLabelModel{text: "Item 3"},
+				label.New("Item 1"),
+				label.New("Item 2"),
+				label.New("Item 3"),
 			),
 			flow.WithWrapping(true),
 			flow.WithPosition(0),
