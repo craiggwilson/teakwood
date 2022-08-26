@@ -9,10 +9,11 @@ import (
 	"github.com/craiggwilson/teakwood/adapter"
 	"github.com/craiggwilson/teakwood/examples"
 	"github.com/craiggwilson/teakwood/frame"
+	"github.com/craiggwilson/teakwood/items"
+	"github.com/craiggwilson/teakwood/items/tabs"
 	"github.com/craiggwilson/teakwood/label"
 	"github.com/craiggwilson/teakwood/named"
 	"github.com/craiggwilson/teakwood/stack"
-	"github.com/craiggwilson/teakwood/tabs"
 )
 
 const rootName = "root"
@@ -49,7 +50,7 @@ type mainModel struct {
 	root   tea.Model
 	keyMap *keyMap
 
-	documents []document
+	documents items.Source[document]
 
 	width  int
 	height int
@@ -77,18 +78,18 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return adapter, nil
 			}))
 		case key.Matches(tmsg, m.keyMap.PrevPage):
-			cmds = append(cmds, named.Update(tabsName, func(tabs tabs.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+			cmds = append(cmds, named.Update(tabsName, func(tabs tabs.Model[document], msg tea.Msg) (tea.Model, tea.Cmd) {
 				tabs.PrevTab()
-				doc := m.documents[tabs.CurrentTab()]
+				doc := m.documents.Item(tabs.CurrentTab())
 				return tabs, named.Update(currentContent, func(f frame.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 					f.SetContent(label.New(doc.content))
 					return f, nil
 				})
 			}))
 		case key.Matches(tmsg, m.keyMap.NextPage):
-			cmds = append(cmds, named.Update(tabsName, func(tabs tabs.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+			cmds = append(cmds, named.Update(tabsName, func(tabs tabs.Model[document], msg tea.Msg) (tea.Model, tea.Cmd) {
 				tabs.NextTab()
-				doc := m.documents[tabs.CurrentTab()]
+				doc := m.documents.Item(tabs.CurrentTab())
 				return tabs, named.Update(currentContent, func(f frame.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 					f.SetContent(label.New(doc.content))
 					return f, nil
@@ -133,15 +134,14 @@ func main() {
 		keyMap: &km,
 	}
 
-	mdl.documents = []document{
-		{title: "Page 1", content: "Page 1 Content"},
-		{title: "Page 2", content: "Page 2 Content"},
-	}
+	mdl.documents = items.NewSlice(
+		document{title: "Page 1", content: "Page 1 Content"},
+		document{title: "Page 2", content: "Page 2 Content"},
+	)
 
-	tabItems := []tea.Model{
-		label.New(mdl.documents[0].title),
-		label.New(mdl.documents[1].title),
-	}
+	documentTabRenderer := items.RenderFunc[document](func(item document) string {
+		return item.title
+	})
 
 	mdl.root = named.New(
 		rootName,
@@ -172,11 +172,11 @@ func main() {
 									stack.WithOrientation(stack.Vertical),
 									stack.WithItems(
 										stack.NewAutoItem(
-											named.New(tabsName, tabs.New(tabs.WithItems(tabItems...))),
+											named.New(tabsName, tabs.New[document](mdl.documents, documentTabRenderer)),
 										),
 										stack.NewItem(
 											stack.Proportional(1),
-											named.New(currentContent, frame.New(label.New(mdl.documents[0].content))),
+											named.New(currentContent, frame.New(label.New(mdl.documents.Item(0).content))),
 										),
 									),
 								),
