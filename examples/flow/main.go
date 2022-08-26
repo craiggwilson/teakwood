@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -40,14 +41,65 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				f.SetOrientation(newOrientation)
 				return f, nil
 			}))
-		case "up":
+		case "=":
 			m.content.Add("Item " + strconv.Itoa(m.content.Len()+1))
 			m.filteredContent.ReapplyFilter()
-		case "down":
+		case "-":
 			if m.content.Len() > 0 {
 				m.content.RemoveAt(m.content.Len() - 1)
 				m.filteredContent.ReapplyFilter()
 			}
+		case "enter":
+			cmds = append(cmds, named.Update(rootName, func(f flow.Model[items.FilteredItem[string]], msg tea.Msg) (tea.Model, tea.Cmd) {
+				ci := f.CurrentIndex()
+				if ci < 0 || ci >= m.filteredContent.Len() {
+					return f, nil
+				}
+
+				sindexes := f.SelectedIndexes()
+				contains := false
+				var i int
+				var si int
+				for i, si = range sindexes {
+					if si == ci {
+						contains = true
+						break
+					}
+				}
+
+				if contains {
+					log.Println("Removing", "Selected", sindexes, "Current", ci)
+					sindexes = append(sindexes[:i], sindexes[i+1:]...)
+
+				} else {
+					log.Println("Adding", "Selected", sindexes, "Current", ci)
+					sindexes = append(sindexes, ci)
+				}
+
+				f.SetSelectedIndexes(sindexes...)
+				return f, nil
+			}))
+		case "down":
+			cmds = append(cmds, named.Update(rootName, func(f flow.Model[items.FilteredItem[string]], msg tea.Msg) (tea.Model, tea.Cmd) {
+				f.MoveCurrentIndexDown()
+				return f, nil
+			}))
+		case "left":
+			cmds = append(cmds, named.Update(rootName, func(f flow.Model[items.FilteredItem[string]], msg tea.Msg) (tea.Model, tea.Cmd) {
+				f.MoveCurrentIndexLeft()
+				return f, nil
+			}))
+		case "right":
+			cmds = append(cmds, named.Update(rootName, func(f flow.Model[items.FilteredItem[string]], msg tea.Msg) (tea.Model, tea.Cmd) {
+				f.MoveCurrentIndexRight()
+				return f, nil
+			}))
+		case "up":
+			cmds = append(cmds, named.Update(rootName, func(f flow.Model[items.FilteredItem[string]], msg tea.Msg) (tea.Model, tea.Cmd) {
+				f.MoveCurrentIndexUp()
+				return f, nil
+			}))
+
 		case "f":
 			filter := ""
 			if m.content.Len() == m.filteredContent.Len() {
@@ -88,8 +140,10 @@ func main() {
 			flow.WithWrapping[items.FilteredItem[string]](true),
 			flow.WithPosition[items.FilteredItem[string]](0),
 			flow.WithStyles[items.FilteredItem[string]](flow.Styles{
-				Item:  lipgloss.NewStyle().Border(lipgloss.NormalBorder(), true),
-				Group: lipgloss.NewStyle().Align(lipgloss.Center),
+				Item:         lipgloss.NewStyle().Border(lipgloss.NormalBorder(), true),
+				Group:        lipgloss.NewStyle().Align(lipgloss.Center),
+				SelectedItem: lipgloss.NewStyle().Border(lipgloss.DoubleBorder(), true),
+				CurrentItem:  lipgloss.NewStyle().Border(lipgloss.DoubleBorder(), true).BorderForeground(lipgloss.Color("1")),
 			}),
 		)),
 	}
