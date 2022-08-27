@@ -8,7 +8,7 @@ type Opt[T any] func(*Model[T])
 
 func WithCurrentIndex[T any](currentIndex int) Opt[T] {
 	return func(m *Model[T]) {
-		m.currentIndex = currentIndex
+		m.currentItemIndex = currentIndex
 	}
 }
 
@@ -26,7 +26,7 @@ func WithPosition[T any](position lipgloss.Position) Opt[T] {
 
 func WithSelectedIndexes[T any](selectedIndexes ...int) Opt[T] {
 	return func(m *Model[T]) {
-		m.selectedIndexes = selectedIndexes
+		m.selectedItemIndexes = selectedIndexes
 	}
 }
 

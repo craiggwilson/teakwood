@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
@@ -127,7 +128,11 @@ func (m mainModel) View() string {
 }
 
 func main() {
-	content := items.NewStrings("Item 1", "Item 2", "Item 3")
+	itemStrings := make([]string, 200)
+	for i := range itemStrings {
+		itemStrings[i] = fmt.Sprintf("Item %d", i+1)
+	}
+	content := items.NewStrings(itemStrings...)
 	filteredContent := items.NewFiltered[string](content, items.FuzzyStringFilter())
 	filteredRenderer := items.RenderFunc[items.FilteredItem[string]](func(fi items.FilteredItem[string]) string {
 		return content.Render(fi.Item)
