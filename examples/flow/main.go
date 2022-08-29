@@ -143,6 +143,7 @@ func main() {
 		filteredContent: filteredContent,
 		root: named.New(rootName, flow.New[items.FilteredItem[string]](filteredContent, filteredRenderer,
 			flow.WithHorizontalAlignment[items.FilteredItem[string]](lipgloss.Center),
+			flow.WithMaxItemsPerGroup[items.FilteredItem[string]](5),
 			flow.WithVerticalAlignment[items.FilteredItem[string]](lipgloss.Center),
 			flow.WithStyles[items.FilteredItem[string]](flow.Styles{
 				Item:         lipgloss.NewStyle().Border(lipgloss.NormalBorder(), true),

@@ -24,6 +24,12 @@ func WithHorizontalAlignment[T any](position lipgloss.Position) Opt[T] {
 	}
 }
 
+func WithMaxItemsPerGroup[T any](max int) Opt[T] {
+	return func(m *Model[T]) {
+		m.maxItemsPerGroup = max
+	}
+}
+
 func WithOrientation[T any](orientation Orientation) Opt[T] {
 	return func(m *Model[T]) {
 		m.orientation = orientation

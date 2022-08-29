@@ -36,6 +36,7 @@ type Model[T any] struct {
 	currentItemIndex    int
 	groupJoinPosition   lipgloss.Position
 	horizontalAlignment lipgloss.Position
+	maxItemsPerGroup    int
 	offset              int
 	orientation         Orientation
 	renderer            items.Renderer[T]
@@ -66,6 +67,10 @@ func (m Model[T]) HorizontalAlignment() lipgloss.Position {
 
 func (m Model[T]) Init() tea.Cmd {
 	return nil
+}
+
+func (m Model[T]) MaxItemsPerGroup() int {
+	return m.maxItemsPerGroup
 }
 
 func (m *Model[T]) MoveCurrentIndexDown() {
@@ -204,12 +209,16 @@ func (m *Model[T]) SetCurrentIndex(currentIndex int) {
 	}
 }
 
-func (m *Model[T]) SetOrientation(orientation Orientation) {
-	m.orientation = orientation
-}
-
 func (m *Model[T]) SetGroupJoinPosition(position lipgloss.Position) {
 	m.groupJoinPosition = position
+}
+
+func (m *Model[T]) SetHorizontalAlignment(position lipgloss.Position) {
+	m.horizontalAlignment = position
+}
+
+func (m *Model[T]) SetOrientation(orientation Orientation) {
+	m.orientation = orientation
 }
 
 func (m *Model[T]) SetRenderer(renderer items.Renderer[T]) {
@@ -222,6 +231,10 @@ func (m *Model[T]) SetSelectedIndexes(selectedIndexes ...int) {
 
 func (m *Model[T]) SetSource(source items.Source[T]) {
 	m.source = source
+}
+
+func (m *Model[T]) SetVerticalAlignment(position lipgloss.Position) {
+	m.verticalAlignment = position
 }
 
 func (m Model[T]) Source() items.Source[T] {
@@ -294,7 +307,7 @@ func (m *Model[T]) renderHorizontal() {
 
 		w := lipgloss.Width(itemView)
 
-		if m.bounds.Width == 0 || curWidth+w < m.bounds.Width || len(m.itemViewCache) == 0 {
+		if (m.maxItemsPerGroup == 0 || len(m.itemViewCache) < m.maxItemsPerGroup) && (m.bounds.Width == 0 || curWidth+w < m.bounds.Width || len(m.itemViewCache) == 0) {
 			m.itemViewCache = append(m.itemViewCache, itemView)
 			curWidth += w
 		} else {
@@ -354,7 +367,7 @@ func (m *Model[T]) renderVertical() {
 
 		h := lipgloss.Height(itemView)
 
-		if m.bounds.Height == 0 || curHeight+h < m.bounds.Height {
+		if (m.maxItemsPerGroup == 0 || len(m.itemViewCache) < m.maxItemsPerGroup) && (m.bounds.Height == 0 || curHeight+h < m.bounds.Height || len(m.itemViewCache) == 0) {
 			m.itemViewCache = append(m.itemViewCache, itemView)
 			curHeight += h
 		} else {
