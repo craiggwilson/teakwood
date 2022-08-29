@@ -12,15 +12,21 @@ func WithCurrentIndex[T any](currentIndex int) Opt[T] {
 	}
 }
 
-func WithOrientation[T any](orientation Orientation) Opt[T] {
+func WithGroupJoinPosition[T any](position lipgloss.Position) Opt[T] {
 	return func(m *Model[T]) {
-		m.orientation = orientation
+		m.groupJoinPosition = position
 	}
 }
 
-func WithPosition[T any](position lipgloss.Position) Opt[T] {
+func WithHorizontalAlignment[T any](position lipgloss.Position) Opt[T] {
 	return func(m *Model[T]) {
-		m.position = position
+		m.horizontalAlignment = position
+	}
+}
+
+func WithOrientation[T any](orientation Orientation) Opt[T] {
+	return func(m *Model[T]) {
+		m.orientation = orientation
 	}
 }
 
@@ -36,8 +42,8 @@ func WithStyles[T any](styles Styles) Opt[T] {
 	}
 }
 
-func WithWrapping[T any](wrapping bool) Opt[T] {
+func WithVerticalAlignment[T any](position lipgloss.Position) Opt[T] {
 	return func(m *Model[T]) {
-		m.wrapping = wrapping
+		m.verticalAlignment = position
 	}
 }

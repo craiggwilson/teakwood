@@ -128,7 +128,7 @@ func (m mainModel) View() string {
 }
 
 func main() {
-	itemStrings := make([]string, 200)
+	itemStrings := make([]string, 3)
 	for i := range itemStrings {
 		itemStrings[i] = fmt.Sprintf("Item %d", i+1)
 	}
@@ -142,8 +142,8 @@ func main() {
 		content:         content,
 		filteredContent: filteredContent,
 		root: named.New(rootName, flow.New[items.FilteredItem[string]](filteredContent, filteredRenderer,
-			flow.WithWrapping[items.FilteredItem[string]](true),
-			flow.WithPosition[items.FilteredItem[string]](0),
+			flow.WithHorizontalAlignment[items.FilteredItem[string]](lipgloss.Center),
+			flow.WithVerticalAlignment[items.FilteredItem[string]](lipgloss.Center),
 			flow.WithStyles[items.FilteredItem[string]](flow.Styles{
 				Item:         lipgloss.NewStyle().Border(lipgloss.NormalBorder(), true),
 				Group:        lipgloss.NewStyle().Align(lipgloss.Center),
