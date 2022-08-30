@@ -10,8 +10,12 @@ type Slice[T any] struct {
 	items []T
 }
 
-func (m *Slice[T]) Add(item T) {
-	m.items = append(m.items, item)
+func (m *Slice[T]) Add(items ...T) {
+	m.items = append(m.items, items...)
+}
+
+func (m *Slice[T]) Clear() {
+	m.items = m.items[:0]
 }
 
 func (m *Slice[T]) InsertAt(item T, index int) {
