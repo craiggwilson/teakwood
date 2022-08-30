@@ -342,12 +342,8 @@ func (m *Model[T]) renderHorizontal() {
 	}
 
 	m.renderedView = lipgloss.JoinVertical(lipgloss.Left, m.groupCache[m.offset:m.offset+m.visibleCount]...)
-	if m.horizontalAlignment != lipgloss.Left {
-		m.renderedView = lipgloss.PlaceHorizontal(m.bounds.Width, m.horizontalAlignment, m.renderedView)
-	}
-	if m.verticalAlignment != lipgloss.Top {
-		m.renderedView = lipgloss.PlaceVertical(m.bounds.Height, m.horizontalAlignment, m.renderedView)
-	}
+	m.renderedView = lipgloss.PlaceHorizontal(m.bounds.Width, m.horizontalAlignment, m.renderedView)
+	m.renderedView = lipgloss.PlaceVertical(m.bounds.Height, m.verticalAlignment, m.renderedView)
 }
 
 func (m *Model[T]) renderVertical() {
@@ -410,12 +406,8 @@ func (m *Model[T]) renderVertical() {
 	}
 
 	m.renderedView = lipgloss.JoinHorizontal(lipgloss.Top, m.groupCache[m.offset:m.offset+m.visibleCount]...)
-	if m.horizontalAlignment != lipgloss.Left {
-		m.renderedView = lipgloss.PlaceHorizontal(m.bounds.Width, m.horizontalAlignment, m.renderedView)
-	}
-	if m.verticalAlignment != lipgloss.Top {
-		m.renderedView = lipgloss.PlaceVertical(m.bounds.Height, m.horizontalAlignment, m.renderedView)
-	}
+	m.renderedView = lipgloss.PlaceHorizontal(m.bounds.Width, m.horizontalAlignment, m.renderedView)
+	m.renderedView = lipgloss.PlaceVertical(m.bounds.Height, m.verticalAlignment, m.renderedView)
 }
 
 func contains(is []int, test int) bool {
