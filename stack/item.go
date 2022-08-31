@@ -40,11 +40,10 @@ func (i Item) update(msg tea.Msg) (Item, tea.Cmd) {
 	return i, cmd
 }
 
-func (i Item) updateBounds(bounds teakwood.Rectangle) Item {
-	i.Visual = i.Visual.UpdateBounds(bounds)
-	return i
-}
-
 func (i Item) view() string {
 	return i.Visual.View()
+}
+
+func (i Item) viewWithBounds(bounds teakwood.Rectangle) string {
+	return i.Visual.ViewWithBounds(bounds)
 }

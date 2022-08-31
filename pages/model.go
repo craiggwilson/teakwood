@@ -15,8 +15,6 @@ type Model struct {
 	items []tea.Model
 
 	currentPage int
-
-	bounds teakwood.Rectangle
 }
 
 func (m *Model) AddItem(page tea.Model) {
@@ -86,15 +84,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	m.bounds = bounds
-	for i := range m.items {
-		m.items[i] = teakwood.UpdateBounds(m.items[i], m.bounds)
-	}
-
-	return m
-}
-
 func (m Model) View() string {
 	return m.items[m.currentPage].View()
+}
+
+func (m Model) ViewWithBounds(bounds teakwood.Rectangle) string {
+	item := m.items[m.currentPage]
+	if v, ok := item.(teakwood.Visual); ok {
+		return v.ViewWithBounds(bounds)
+	}
+
+	return item.View()
 }

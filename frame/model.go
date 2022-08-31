@@ -21,8 +21,6 @@ func New(content tea.Model, opts ...Opt) Model {
 type Model struct {
 	content tea.Model
 	style   lipgloss.Style
-
-	bounds teakwood.Rectangle
 }
 
 func (m Model) Init() tea.Cmd {
@@ -35,7 +33,6 @@ func (m *Model) SetContent(content tea.Model) {
 
 func (m *Model) SetStyle(style lipgloss.Style) {
 	m.style = style
-	m.applyBoundsToStyleAndContent()
 }
 
 func (m Model) Style() lipgloss.Style {
@@ -48,18 +45,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	m.bounds = bounds
-	m.applyBoundsToStyleAndContent()
-	return m
-}
-
 func (m Model) View() string {
 	return m.style.Render(m.content.View())
 }
 
-func (m *Model) applyBoundsToStyleAndContent() {
+func (m Model) ViewWithBounds(bounds teakwood.Rectangle) string {
 	offsets := teakwood.OffsetsFromStyle(m.style)
-	m.style = m.style.Width(m.bounds.Width - offsets.Width).Height(m.bounds.Height - offsets.Height)
-	m.content = teakwood.UpdateBounds(m.content, m.bounds.Offset(offsets))
+
+	if v, ok := m.content.(teakwood.Visual); ok {
+		return v.ViewWithBounds(bounds.Offset(offsets))
+	}
+
+	s := m.style.Copy().Width(bounds.Width - offsets.Width).Height(bounds.Height - offsets.Height)
+	return s.Render(m.content.View())
 }

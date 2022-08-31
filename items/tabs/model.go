@@ -24,7 +24,6 @@ func New[T any](source items.Source[T], renderer items.Renderer[T], opts ...Opt[
 }
 
 type Model[T any] struct {
-	bounds     teakwood.Rectangle
 	currentTab int
 	renderer   items.Renderer[T]
 	source     items.Source[T]
@@ -88,12 +87,17 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model[T]) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	m.bounds = bounds
-	return m
+func (m Model[T]) View() string {
+	return m.renderTabs()
 }
 
-func (m Model[T]) View() string {
+func (m Model[T]) ViewWithBounds(bounds teakwood.Rectangle) string {
+	itemsView := m.renderTabs()
+	filler := m.styles.Filler.Render(strings.Repeat(" ", max(0, bounds.Width-lipgloss.Width(itemsView))))
+	return lipgloss.JoinHorizontal(lipgloss.Bottom, itemsView, filler)
+}
+
+func (m Model[T]) renderTabs() string {
 	if len(m.views) != m.source.Len() {
 		m.views = make([]string, m.source.Len())
 	}
@@ -110,9 +114,7 @@ func (m Model[T]) View() string {
 		m.views[i] = view
 	}
 
-	itemsView := lipgloss.JoinHorizontal(lipgloss.Top, m.views...)
-	filler := m.styles.Filler.Render(strings.Repeat(" ", max(0, m.bounds.Width-lipgloss.Width(itemsView))))
-	return lipgloss.JoinHorizontal(lipgloss.Bottom, itemsView, filler)
+	return lipgloss.JoinHorizontal(lipgloss.Top, m.views...)
 }
 
 func max(a, b int) int {

@@ -39,15 +39,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	if c, ok := m.content.(teakwood.Visual); ok {
-		m.content = c.UpdateBounds(bounds)
-	}
-
-	return m
+func (m Model) View() string {
+	return m.content.View()
 }
 
-func (m Model) View() string {
+func (m Model) ViewWithBounds(bounds teakwood.Rectangle) string {
+	if v, ok := m.content.(teakwood.Visual); ok {
+		return v.ViewWithBounds(bounds)
+	}
+
 	return m.content.View()
 }
 

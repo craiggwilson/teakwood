@@ -26,7 +26,6 @@ const (
 )
 
 type Model struct {
-	bounds      teakwood.Rectangle
 	items       []Item
 	orientation Orientation
 	position    lipgloss.Position
@@ -52,17 +51,14 @@ func (m Model) Orientation() Orientation {
 
 func (m *Model) SetItems(items ...Item) {
 	m.items = items
-	m.renderItems()
 }
 
 func (m *Model) SetOrientation(orientation Orientation) {
 	m.orientation = orientation
-	m.renderItems()
 }
 
 func (m *Model) SetPosition(position lipgloss.Position) {
 	m.position = position
-	m.renderItems()
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -74,18 +70,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
-	m.renderItems()
-
 	return m, tea.Batch(cmds...)
 }
 
-func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	m.bounds = bounds
+func (m Model) View() string {
 	m.renderItems()
-	return m
+	return m.renderView()
 }
 
-func (m Model) View() string {
+func (m Model) ViewWithBounds(bounds teakwood.Rectangle) string {
+	m.renderItemsWithBounds(bounds)
+	return m.renderView()
+}
+
+func (m Model) renderView() string {
 	switch m.orientation {
 	case Vertical:
 		return lipgloss.JoinVertical(m.position, m.itemViews...)
@@ -97,6 +95,16 @@ func (m Model) View() string {
 }
 
 func (m *Model) renderItems() {
+	if len(m.itemViews) != len(m.items) {
+		m.itemViews = make([]string, len(m.items))
+	}
+
+	for i, item := range m.items {
+		m.itemViews[i] = item.view()
+	}
+}
+
+func (m *Model) renderItemsWithBounds(bounds teakwood.Rectangle) {
 	absLengths := make([]int, len(m.items))
 	if len(m.itemViews) != len(m.items) {
 		m.itemViews = make([]string, len(m.items))
@@ -105,9 +113,9 @@ func (m *Model) renderItems() {
 	var remaining int
 	switch m.orientation {
 	case Vertical:
-		remaining = m.bounds.Height
+		remaining = bounds.Height
 	case Horizontal:
-		remaining = m.bounds.Width
+		remaining = bounds.Width
 	}
 
 	var proportionalCount int
@@ -131,10 +139,6 @@ func (m *Model) renderItems() {
 		if !item.Length.IsAuto() {
 			continue
 		}
-
-		// Temporarily, we'll clear the bounds to indicate we'd like these to be autosized. They'll
-		// get set back later.
-		m.items[i] = m.items[i].updateBounds(teakwood.Rectangle{})
 
 		w, h := lipgloss.Size(m.items[i].view())
 		switch m.orientation {
@@ -162,24 +166,22 @@ func (m *Model) renderItems() {
 		}
 	}
 
-	curX := m.bounds.X
-	curY := m.bounds.Y
+	curX := bounds.X
+	curY := bounds.Y
 	for i := range m.items {
 		var itemStyle lipgloss.Style
 
 		switch m.orientation {
 		case Vertical:
-			childBounds := teakwood.NewRectangle(curX, curY, m.bounds.Width, absLengths[i])
-			m.items[i] = m.items[i].updateBounds(childBounds)
+			childBounds := teakwood.NewRectangle(curX, curY, bounds.Width, absLengths[i])
+			m.itemViews[i] = itemStyle.Render(m.items[i].viewWithBounds(childBounds))
 			curY += absLengths[i]
-			itemStyle = lipgloss.NewStyle().MaxWidth(m.bounds.Width).MaxHeight(absLengths[i])
+			itemStyle = lipgloss.NewStyle().MaxWidth(bounds.Width).MaxHeight(absLengths[i])
 		case Horizontal:
-			childBounds := teakwood.NewRectangle(curX, curY, absLengths[i], m.bounds.Height)
-			m.items[i] = m.items[i].updateBounds(childBounds)
+			childBounds := teakwood.NewRectangle(curX, curY, absLengths[i], bounds.Height)
+			m.itemViews[i] = itemStyle.Render(m.items[i].viewWithBounds(childBounds))
 			curX += absLengths[i]
-			itemStyle = lipgloss.NewStyle().MaxHeight(m.bounds.Height).MaxWidth(absLengths[i])
+			itemStyle = lipgloss.NewStyle().MaxHeight(bounds.Height).MaxWidth(absLengths[i])
 		}
-
-		m.itemViews[i] = itemStyle.Render(m.items[i].view())
 	}
 }

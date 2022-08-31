@@ -20,10 +20,10 @@ func New[T any](adaptee T, opts ...Opt[T]) Model[T] {
 type Model[T any] struct {
 	adaptee T
 
-	init         func(T) tea.Cmd
-	update       func(T, tea.Msg) (T, tea.Cmd)
-	updateBounds func(T, teakwood.Rectangle) T
-	view         func(T) string
+	init           func(T) tea.Cmd
+	update         func(T, tea.Msg) (T, tea.Cmd)
+	view           func(T) string
+	viewWithBounds func(T, teakwood.Rectangle) string
 }
 
 func (m Model[T]) Adaptee() T {
@@ -53,17 +53,6 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model[T]) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	if m.updateBounds != nil {
-		m.adaptee = m.updateBounds(m.adaptee, bounds)
-	} else if bu, ok := any(m.adaptee).(boundsUpdater); ok {
-		newAdaptee := bu.UpdateBounds(bounds)
-		m.adaptee = newAdaptee.(T)
-	}
-
-	return m
-}
-
 func (m *Model[T]) UpdateAdaptee(v func(T) T) {
 	m.adaptee = v(m.adaptee)
 }
@@ -80,8 +69,18 @@ func (m Model[T]) View() string {
 	return ""
 }
 
-type boundsUpdater interface {
-	UpdateBounds(teakwood.Rectangle) teakwood.Visual
+func (m Model[T]) ViewWithBounds(bounds teakwood.Rectangle) string {
+	if m.viewWithBounds != nil {
+		return m.viewWithBounds(m.adaptee, bounds)
+	} else if bu, ok := any(m.adaptee).(boundsViewer); ok {
+		return bu.ViewWithBounds(bounds)
+	}
+
+	return ""
+}
+
+type boundsViewer interface {
+	ViewWithBounds(teakwood.Rectangle) string
 }
 
 type initer interface {

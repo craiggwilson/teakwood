@@ -32,7 +32,6 @@ const (
 )
 
 type Model[T any] struct {
-	bounds              teakwood.Rectangle
 	currentItemIndex    int
 	groupJoinPosition   lipgloss.Position
 	horizontalAlignment lipgloss.Position
@@ -49,7 +48,6 @@ type Model[T any] struct {
 	groupCounts   []int
 	groupLengths  []int
 	itemViewCache []string
-	renderedView  string
 	visibleCount  int
 }
 
@@ -242,13 +240,14 @@ func (m Model[T]) Source() items.Source[T] {
 }
 
 func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	m.renderView()
-	return m, nil
-}
+	if len(m.itemViewCache) != m.source.Len() {
+		m.itemViewCache = make([]string, 0, m.source.Len())
+		m.groupCounts = make([]int, 0, m.source.Len())
+		m.groupCache = make([]string, 0, m.source.Len())
+		m.groupLengths = make([]int, 0, m.source.Len())
+	}
 
-func (m Model[T]) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	m.bounds = bounds
-	return m
+	return m, nil
 }
 
 func (m Model[T]) VerticalAlignment() lipgloss.Position {
@@ -256,7 +255,11 @@ func (m Model[T]) VerticalAlignment() lipgloss.Position {
 }
 
 func (m Model[T]) View() string {
-	return m.renderedView
+	return m.renderView(teakwood.Rectangle{})
+}
+
+func (m Model[T]) ViewWithBounds(bounds teakwood.Rectangle) string {
+	return m.renderView(bounds)
 }
 
 func (m *Model[T]) groupIndex(itemIndex int) int {
@@ -271,26 +274,26 @@ func (m *Model[T]) groupIndex(itemIndex int) int {
 	return -1
 }
 
-func (m *Model[T]) renderView() {
+func (m *Model[T]) renderView(bounds teakwood.Rectangle) string {
 	m.itemViewCache = m.itemViewCache[:0]
 	m.groupCounts = m.groupCounts[:0]
 	m.groupCache = m.groupCache[:0]
 	m.groupLengths = m.groupLengths[:0]
 
 	switch m.orientation {
-	case Vertical:
-		m.renderVertical()
 	case Horizontal:
-		m.renderHorizontal()
+		return m.renderHorizontal(bounds)
+	case Vertical:
+		return m.renderVertical(bounds)
 	default:
 		panic(fmt.Sprintf("unknown orientation: %v", m.orientation))
 	}
 }
 
-func (m *Model[T]) renderHorizontal() {
+func (m *Model[T]) renderHorizontal(bounds teakwood.Rectangle) string {
 	groupStyle := m.styles.Group
 	if groupStyle.GetAlign() != lipgloss.Left {
-		groupStyle = groupStyle.Copy().Width(m.bounds.Width)
+		groupStyle = groupStyle.Copy().Width(bounds.Width)
 	}
 
 	curWidth := groupStyle.GetHorizontalFrameSize()
@@ -307,7 +310,7 @@ func (m *Model[T]) renderHorizontal() {
 
 		w := lipgloss.Width(itemView)
 
-		if (m.maxItemsPerGroup == 0 || len(m.itemViewCache) < m.maxItemsPerGroup) && (m.bounds.Width == 0 || curWidth+w < m.bounds.Width || len(m.itemViewCache) == 0) {
+		if (m.maxItemsPerGroup == 0 || len(m.itemViewCache) < m.maxItemsPerGroup) && (bounds.Width == 0 || curWidth+w < bounds.Width || len(m.itemViewCache) == 0) {
 			m.itemViewCache = append(m.itemViewCache, itemView)
 			curWidth += w
 		} else {
@@ -329,7 +332,7 @@ func (m *Model[T]) renderHorizontal() {
 		m.groupLengths = append(m.groupLengths, lipgloss.Height(group))
 	}
 
-	availableHeight := m.bounds.Height
+	availableHeight := bounds.Height
 	curHeight := 0
 	m.visibleCount = 0
 	for i := m.offset; i < len(m.groupLengths); i++ {
@@ -341,12 +344,12 @@ func (m *Model[T]) renderHorizontal() {
 		m.visibleCount++
 	}
 
-	m.renderedView = lipgloss.JoinVertical(lipgloss.Left, m.groupCache[m.offset:m.offset+m.visibleCount]...)
-	m.renderedView = lipgloss.PlaceHorizontal(m.bounds.Width, m.horizontalAlignment, m.renderedView)
-	m.renderedView = lipgloss.PlaceVertical(m.bounds.Height, m.verticalAlignment, m.renderedView)
+	renderedView := lipgloss.JoinVertical(lipgloss.Left, m.groupCache[m.offset:m.offset+m.visibleCount]...)
+	renderedView = lipgloss.PlaceHorizontal(bounds.Width, m.horizontalAlignment, renderedView)
+	return lipgloss.PlaceVertical(bounds.Height, m.verticalAlignment, renderedView)
 }
 
-func (m *Model[T]) renderVertical() {
+func (m *Model[T]) renderVertical(bounds teakwood.Rectangle) string {
 	groupStyle := m.styles.Group
 
 	curHeight := groupStyle.GetVerticalFrameSize()
@@ -363,13 +366,13 @@ func (m *Model[T]) renderVertical() {
 
 		h := lipgloss.Height(itemView)
 
-		if (m.maxItemsPerGroup == 0 || len(m.itemViewCache) < m.maxItemsPerGroup) && (m.bounds.Height == 0 || curHeight+h < m.bounds.Height || len(m.itemViewCache) == 0) {
+		if (m.maxItemsPerGroup == 0 || len(m.itemViewCache) < m.maxItemsPerGroup) && (bounds.Height == 0 || curHeight+h < bounds.Height || len(m.itemViewCache) == 0) {
 			m.itemViewCache = append(m.itemViewCache, itemView)
 			curHeight += h
 		} else {
 			groupItems := lipgloss.JoinVertical(m.groupJoinPosition, m.itemViewCache...)
 			if groupStyle.GetAlign() != lipgloss.Top {
-				groupItems = lipgloss.PlaceVertical(m.bounds.Height, groupStyle.GetAlign(), groupItems)
+				groupItems = lipgloss.PlaceVertical(bounds.Height, groupStyle.GetAlign(), groupItems)
 			}
 			group := groupStyle.Render(groupItems)
 			m.groupCache = append(m.groupCache, group)
@@ -385,7 +388,7 @@ func (m *Model[T]) renderVertical() {
 	if len(m.itemViewCache) > 0 {
 		groupItems := lipgloss.JoinVertical(m.groupJoinPosition, m.itemViewCache...)
 		if groupStyle.GetAlign() != lipgloss.Top {
-			groupItems = lipgloss.PlaceVertical(m.bounds.Height, groupStyle.GetAlign(), groupItems)
+			groupItems = lipgloss.PlaceVertical(bounds.Height, groupStyle.GetAlign(), groupItems)
 		}
 		group := groupStyle.Render(groupItems)
 		m.groupCache = append(m.groupCache, group)
@@ -393,7 +396,7 @@ func (m *Model[T]) renderVertical() {
 		m.groupLengths = append(m.groupLengths, lipgloss.Width(group))
 	}
 
-	availableWidth := m.bounds.Width
+	availableWidth := bounds.Width
 	curWidth := 0
 	m.visibleCount = 0
 	for i := m.offset; i < len(m.groupLengths); i++ {
@@ -405,9 +408,9 @@ func (m *Model[T]) renderVertical() {
 		m.visibleCount++
 	}
 
-	m.renderedView = lipgloss.JoinHorizontal(lipgloss.Top, m.groupCache[m.offset:m.offset+m.visibleCount]...)
-	m.renderedView = lipgloss.PlaceHorizontal(m.bounds.Width, m.horizontalAlignment, m.renderedView)
-	m.renderedView = lipgloss.PlaceVertical(m.bounds.Height, m.verticalAlignment, m.renderedView)
+	renderedView := lipgloss.JoinHorizontal(lipgloss.Top, m.groupCache[m.offset:m.offset+m.visibleCount]...)
+	renderedView = lipgloss.PlaceHorizontal(bounds.Width, m.horizontalAlignment, renderedView)
+	return lipgloss.PlaceVertical(bounds.Height, m.verticalAlignment, renderedView)
 }
 
 func contains(is []int, test int) bool {
