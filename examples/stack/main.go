@@ -47,13 +47,12 @@ type document struct {
 }
 
 type mainModel struct {
-	root   tea.Model
+	root   teakwood.Visual
 	keyMap *keyMap
 
 	documents items.Source[document]
 
-	width  int
-	height int
+	bounds teakwood.Rectangle
 }
 
 func (m mainModel) Init() tea.Cmd {
@@ -97,18 +96,17 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}))
 		}
 	case tea.WindowSizeMsg:
-		cmds = append(cmds, named.Update(rootName, func(st stack.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
-			return st.UpdateBounds(teakwood.NewRectangle(0, 0, tmsg.Width, tmsg.Height)), nil
-		}))
+		m.bounds = teakwood.NewRectangle(0, 0, tmsg.Width, tmsg.Height)
 	}
 
-	m.root, cmd = m.root.Update(msg)
+	v, cmd := m.root.Update(msg)
+	m.root = v.(teakwood.Visual)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }
 
 func (m mainModel) View() string {
-	return m.root.View()
+	return m.root.ViewWithBounds(m.bounds)
 }
 
 func main() {
@@ -121,11 +119,12 @@ func main() {
 
 	helpAdapter := adapter.New(
 		help.New(),
-		adapter.WithUpdateBounds(func(m help.Model, bounds teakwood.Rectangle) help.Model {
-			m.Width = bounds.Width
-			return m
-		}),
 		adapter.WithView(func(m help.Model) string {
+			m.Width = 0
+			return m.View(&km)
+		}),
+		adapter.WithBoundsViewer(func(m help.Model, bounds teakwood.Rectangle) string {
+			m.Width = bounds.Width
 			return m.View(&km)
 		}),
 	)

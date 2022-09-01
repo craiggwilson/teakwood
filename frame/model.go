@@ -52,10 +52,11 @@ func (m Model) View() string {
 func (m Model) ViewWithBounds(bounds teakwood.Rectangle) string {
 	offsets := teakwood.OffsetsFromStyle(m.style)
 
+	s := m.style.Copy().Width(bounds.Width - offsets.Width).Height(bounds.Height - offsets.Height)
+
 	if v, ok := m.content.(teakwood.Visual); ok {
-		return v.ViewWithBounds(bounds.Offset(offsets))
+		return s.Render(v.ViewWithBounds(bounds.Offset(offsets)))
 	}
 
-	s := m.style.Copy().Width(bounds.Width - offsets.Width).Height(bounds.Height - offsets.Height)
 	return s.Render(m.content.View())
 }

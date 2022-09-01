@@ -17,10 +17,12 @@ import (
 const rootName = "root"
 
 type mainModel struct {
-	root tea.Model
+	root teakwood.Visual
 
 	content         *items.Strings
 	filteredContent *items.Filtered[string]
+
+	bounds teakwood.Rectangle
 }
 
 func (m mainModel) Init() tea.Cmd {
@@ -113,18 +115,17 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
-		cmds = append(cmds, named.Update(rootName, func(f flow.Model[items.FilteredItem[string]], msg tea.Msg) (tea.Model, tea.Cmd) {
-			return f.UpdateBounds(teakwood.NewRectangle(0, 0, tmsg.Width-1, tmsg.Height-1)), nil
-		}))
+		m.bounds = teakwood.NewRectangle(0, 0, tmsg.Width-1, tmsg.Height-1)
 	}
 
-	m.root, cmd = m.root.Update(msg)
+	v, cmd := m.root.Update(msg)
+	m.root = v.(teakwood.Visual)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }
 
 func (m mainModel) View() string {
-	return m.root.View() + "\n"
+	return m.root.ViewWithBounds(m.bounds)
 }
 
 func main() {
