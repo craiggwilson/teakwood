@@ -39,6 +39,10 @@ func (r *Rectangle) Right() int {
 	return r.X + r.Width
 }
 
+func (r *Rectangle) Size() Size {
+	return NewSize(r.Width, r.Height)
+}
+
 func (r *Rectangle) Top() int {
 	return r.Y
 }

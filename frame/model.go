@@ -6,7 +6,9 @@ import (
 	"github.com/craiggwilson/teakwood"
 )
 
-func New(content tea.Model, opts ...Opt) Model {
+const styleKey = "frame"
+
+func New(content teakwood.Visual, opts ...Opt) Model {
 	m := Model{
 		content: content,
 	}
@@ -19,47 +21,53 @@ func New(content tea.Model, opts ...Opt) Model {
 }
 
 type Model struct {
-	content tea.Model
-	style   lipgloss.Style
-
-	bounds teakwood.Rectangle
+	bounds  teakwood.Rectangle
+	content teakwood.Visual
+	name    string
+	styler  teakwood.Styler
 }
 
-func (m Model) Init() tea.Cmd {
-	return m.content.Init()
+func (m *Model) Init(styler teakwood.Styler) tea.Cmd {
+	m.styler = styler
+	return m.content.Init(styler)
 }
 
-func (m *Model) SetContent(content tea.Model) {
+func (m *Model) Measure(size teakwood.Size) teakwood.Size {
+	s := m.getStyle(size)
+	offsets := teakwood.OffsetsFromStyle(s)
+	offsetsSize := offsets.Size()
+
+	contentMeasure := m.content.Measure(offsetsSize)
+	contentMeasure.Height += offsetsSize.Height
+	contentMeasure.Width += offsetsSize.Width
+	return contentMeasure
+}
+
+func (m *Model) SetContent(content teakwood.Visual) {
 	m.content = content
 }
 
-func (m *Model) SetStyle(style lipgloss.Style) {
-	m.style = style
-	m.applyBoundsToStyleAndContent()
-}
+func (m *Model) Update(msg tea.Msg, bounds teakwood.Rectangle) (teakwood.Visual, tea.Cmd) {
+	m.bounds = bounds
 
-func (m Model) Style() lipgloss.Style {
-	return m.style
-}
+	s := m.getStyle(m.bounds.Size())
+	offsets := teakwood.OffsetsFromStyle(s)
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	m.content, cmd = m.content.Update(msg)
+	m.content, cmd = m.content.Update(msg, bounds.Offset(offsets))
 	return m, cmd
 }
 
-func (m Model) UpdateBounds(bounds teakwood.Rectangle) teakwood.Visual {
-	m.bounds = bounds
-	m.applyBoundsToStyleAndContent()
-	return m
+func (m *Model) View() string {
+	s := m.getStyle(m.bounds.Size())
+	return s.Render(m.content.View())
 }
 
-func (m Model) View() string {
-	return m.style.Render(m.content.View())
-}
+func (m *Model) getStyle(size teakwood.Size) lipgloss.Style {
+	s, ok := m.styler.Style("#" + m.name)
+	if !ok {
+		s, _ = m.styler.Style(styleKey)
+	}
 
-func (m *Model) applyBoundsToStyleAndContent() {
-	offsets := teakwood.OffsetsFromStyle(m.style)
-	m.style = m.style.Width(m.bounds.Width - offsets.Width).Height(m.bounds.Height - offsets.Height)
-	m.content = teakwood.UpdateBounds(m.content, m.bounds.Offset(offsets))
+	return s.MaxWidth(size.Width).MaxHeight(size.Height)
 }

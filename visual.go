@@ -3,15 +3,18 @@ package teakwood
 import tea "github.com/charmbracelet/bubbletea"
 
 type Visual interface {
-	tea.Model
-
-	UpdateBounds(Rectangle) Visual
+	Init(Styler) tea.Cmd
+	Measure(size Size) Size
+	Update(tea.Msg, Rectangle) (Visual, tea.Cmd)
+	View() string
 }
 
-func UpdateBounds(m tea.Model, bounds Rectangle) tea.Model {
-	if v, ok := any(m).(Visual); ok {
-		return v.UpdateBounds(bounds)
-	}
+type Focuser interface {
+	Focused() bool
+	SetFocus(bool)
+}
 
-	return m
+type Visibler interface {
+	Visible() bool
+	SetVisible(bool)
 }
