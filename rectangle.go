@@ -31,6 +31,10 @@ func (r *Rectangle) Bottom() int {
 	return r.Y + r.Height
 }
 
+func (r *Rectangle) IsZero() bool {
+	return r.X == 0 && r.Y == 0 && r.Width == 0 && r.Height == 0
+}
+
 func (r *Rectangle) Left() int {
 	return r.X
 }

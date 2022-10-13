@@ -4,6 +4,6 @@ type Opt func(*Model)
 
 func WithName(name string) Opt {
 	return func(m *Model) {
-		m.name = name
+		m.widget.Name = name
 	}
 }

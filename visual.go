@@ -1,6 +1,8 @@
 package teakwood
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 type Visual interface {
 	Init(Styler) tea.Cmd

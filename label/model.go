@@ -4,14 +4,18 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/craiggwilson/teakwood"
+	"github.com/craiggwilson/teakwood/util"
 )
 
-const styleKey = "label"
+const StyleKey = "label"
 
 func New(text string, opts ...Opt) *Model {
 	m := Model{
-		text:    text,
-		visible: true,
+		text: text,
+		widget: &util.Widget{
+			Kind:    StyleKey,
+			Visible: true,
+		},
 	}
 
 	for _, opt := range opts {
@@ -22,27 +26,24 @@ func New(text string, opts ...Opt) *Model {
 }
 
 type Model struct {
-	bounds  teakwood.Rectangle
-	name    string
-	styler  teakwood.Styler
-	text    string
-	visible bool
+	widget *util.Widget
+
+	text string
 }
 
 func (m *Model) Init(styler teakwood.Styler) tea.Cmd {
-	m.styler = styler
+	m.widget.Styler = styler
 	return nil
 }
 
 func (m *Model) Measure(size teakwood.Size) teakwood.Size {
-	if !m.visible {
-		return teakwood.NewSize(0, 0)
+	if !m.widget.Visible {
+		return teakwood.Size{}
 	}
 
-	s := m.getStyle(size)
+	s := m.widget.Style(size)
 	render := s.Render(m.text)
-	width, height := lipgloss.Size(render)
-	return teakwood.NewSize(width, height)
+	return teakwood.NewSize(lipgloss.Size(render))
 }
 
 func (m *Model) SetText(text string) {
@@ -50,31 +51,22 @@ func (m *Model) SetText(text string) {
 }
 
 func (m *Model) SetVisible(visible bool) {
-	m.visible = visible
+	m.widget.Visible = visible
 }
 
 func (m *Model) Update(msg tea.Msg, bounds teakwood.Rectangle) (teakwood.Visual, tea.Cmd) {
-	m.bounds = bounds
+	m.widget.Bounds = bounds
 	return m, nil
 }
 
 func (m *Model) View() string {
-	if !m.visible {
-		return ""
-	}
-
-	return m.getStyle(m.bounds.Size()).Render(m.text)
+	return m.widget.Render(m.text)
 }
 
 func (m *Model) Visible() bool {
-	return m.visible
+	return m.widget.Visible
 }
 
-func (m *Model) getStyle(size teakwood.Size) lipgloss.Style {
-	s, ok := m.styler.Style("#" + m.name)
-	if !ok {
-		s, _ = m.styler.Style(styleKey)
-	}
+func (m *Model) Widget2() {
 
-	return s.MaxWidth(size.Width).MaxHeight(size.Height)
 }
