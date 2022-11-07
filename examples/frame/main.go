@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/craiggwilson/teakwood"
 	"github.com/craiggwilson/teakwood/examples"
 	"github.com/craiggwilson/teakwood/frame"
@@ -33,7 +34,7 @@ type mainModel struct {
 	root teakwood.Visual
 
 	bounds teakwood.Rectangle
-	styler teakwood.Styler
+	styler teakwood.StyleSheet
 }
 
 func (m *mainModel) Init() tea.Cmd {

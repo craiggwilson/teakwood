@@ -2,21 +2,33 @@ package teakwood
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/craiggwilson/teakwood/util/collections/list"
+	"github.com/craiggwilson/teakwood/util/collections/set"
 )
 
 type Visual interface {
-	Init(Styler) tea.Cmd
-	Measure(size Size) Size
-	Update(tea.Msg, Rectangle) (Visual, tea.Cmd)
-	View() string
-}
+	tea.Model
 
-type Focuser interface {
+	AddClasses(classes ...string)
+	Ancestors() list.ReadOnly[Visual]
+	Bounds() Rectangle
+	CanFocus() bool
+	Children() list.ReadOnly[Visual]
+	Classes() set.ReadOnly[string]
+	Enabled() bool
 	Focused() bool
-	SetFocus(bool)
-}
+	Hovered() bool
+	ID() string
+	Name() string
+	Parent() Visual
+	PseudoClasses() set.ReadOnly[string]
 
-type Visibler interface {
-	Visible() bool
+	SetBounds(Rectangle)
+	SetEnabled(bool)
+	SetFocused(bool)
+	SetID(string)
+	SetParent(Visual)
+	SetStyleSheet(StyleSheet)
 	SetVisible(bool)
 }

@@ -12,5 +12,6 @@ type Set[T comparable] interface {
 	ReadOnly[T]
 
 	Add(T)
+	Clear()
 	Remove(T)
 }

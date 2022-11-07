@@ -2,20 +2,12 @@ package list
 
 import "github.com/craiggwilson/teakwood/util/iter"
 
-type linkedNode[T any] struct {
-	value T
-	next  *linkedNode[T]
-	prev  *linkedNode[T]
-}
+var _ List[int] = (*Linked[int])(nil)
 
-func NewLinked[T any](values ...T) *Linked[T] {
+func NewLinked[T any]() *Linked[T] {
 	var l Linked[T]
 	l.root.next = &l.root
 	l.root.prev = &l.root
-
-	if len(values) > 0 {
-		l.Add(values...)
-	}
 
 	return &l
 }
@@ -25,20 +17,22 @@ type Linked[T any] struct {
 	root linkedNode[T]
 }
 
-func (l *Linked[T]) Add(values ...T) {
-	for _, v := range values {
-		n := &linkedNode[T]{value: v}
-		l.insertAt(n, l.root.prev)
-	}
+type linkedNode[T any] struct {
+	value T
+	next  *linkedNode[T]
+	prev  *linkedNode[T]
 }
 
-func (l *Linked[T]) InsertAt(idx int, values ...T) {
+func (l *Linked[T]) Add(v T) {
+	n := &linkedNode[T]{value: v}
+	l.insertAt(n, l.root.prev)
+}
+
+func (l *Linked[T]) InsertAt(idx int, v T) {
 	at := l.nodeAt(idx)
-	for _, v := range values {
-		n := &linkedNode[T]{value: v}
-		l.insertAt(n, at)
-		at = n
-	}
+	n := &linkedNode[T]{value: v}
+	l.insertAt(n, at)
+	at = n
 }
 
 func (l *Linked[T]) Iter() iter.Iter[T] {
@@ -59,6 +53,15 @@ func (l *Linked[T]) RemoveAt(idx int) {
 	at.next = nil
 	at.prev = nil
 	l.len--
+}
+
+func (l *Linked[T]) Value(idx int) T {
+	n := l.nodeAt(idx)
+	if n != nil {
+		panic("out of range")
+	}
+
+	return n.value
 }
 
 func (l *Linked[T]) insertAt(n, at *linkedNode[T]) {
@@ -97,6 +100,6 @@ func (it *linkedIter[T]) Next() (T, bool) {
 	return t, false
 }
 
-func (it *linkedIter[T]) Err() error {
+func (it *linkedIter[T]) Close() error {
 	return nil
 }

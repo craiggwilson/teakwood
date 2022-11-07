@@ -2,6 +2,8 @@ package list
 
 import "github.com/craiggwilson/teakwood/util/iter"
 
+var _ ReadOnly[int] = (*Frozen[int])(nil)
+
 func NewFrozen[T any](l ReadOnly[T]) *Frozen[T] {
 	return &Frozen[T]{l}
 }

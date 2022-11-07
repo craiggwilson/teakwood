@@ -3,6 +3,7 @@ package label
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/craiggwilson/teakwood"
 	"github.com/craiggwilson/teakwood/util"
 )
@@ -31,7 +32,7 @@ type Model struct {
 	text string
 }
 
-func (m *Model) Init(styler teakwood.Styler) tea.Cmd {
+func (m *Model) Init(styler teakwood.StyleSheet) tea.Cmd {
 	m.widget.Styler = styler
 	return nil
 }

@@ -2,6 +2,7 @@ package theme
 
 import (
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/craiggwilson/teakwood"
 )
 
@@ -24,6 +25,6 @@ func (b *Builder) Set(key string, style lipgloss.Style) *Builder {
 	return b
 }
 
-func (b *Builder) Build() teakwood.Styler {
+func (b *Builder) Build() teakwood.StyleSheet {
 	return b.t
 }

@@ -2,8 +2,10 @@ package list
 
 import "github.com/craiggwilson/teakwood/util/iter"
 
-func NewSlice[T any](values ...T) *Slice[T] {
-	return &Slice[T]{values}
+var _ List[int] = (*Slice[int])(nil)
+
+func NewSlice[T any]() *Slice[T] {
+	return &Slice[T]{}
 }
 
 func NewSliceWithCap[T any](cap int, values ...T) *Slice[T] {
@@ -16,16 +18,16 @@ type Slice[T any] struct {
 	values []T
 }
 
-func (l *Slice[T]) Add(values ...T) {
-	l.values = append(l.values, values...)
+func (l *Slice[T]) Add(v T) {
+	l.values = append(l.values, v)
 }
 
-func (l *Slice[T]) InsertAt(idx int, values ...T) {
-	l.values = append(l.values[:idx], append(values, l.values[idx+1:]...)...)
+func (l *Slice[T]) InsertAt(idx int, v T) {
+	l.values = append(l.values[:idx], append([]T{v}, l.values[idx+1:]...)...)
 }
 
 func (l *Slice[T]) Iter() iter.Iter[T] {
-	return iter.NewSlice[T](l.values...)
+	return iter.FromSlice[T](l.values)
 }
 
 func (l *Slice[T]) Len() int {

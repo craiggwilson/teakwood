@@ -2,12 +2,13 @@ package theme
 
 import (
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/craiggwilson/teakwood"
 	"github.com/craiggwilson/teakwood/frame"
 	"github.com/craiggwilson/teakwood/label"
 )
 
-func Default() teakwood.Styler {
+func Default() teakwood.StyleSheet {
 	return defaultTheme()
 }
 

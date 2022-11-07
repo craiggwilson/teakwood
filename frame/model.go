@@ -2,6 +2,7 @@ package frame
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/craiggwilson/teakwood"
 	"github.com/craiggwilson/teakwood/util"
 )
@@ -30,7 +31,7 @@ type Model struct {
 	content teakwood.Visual
 }
 
-func (m *Model) Init(styler teakwood.Styler) tea.Cmd {
+func (m *Model) Init(styler teakwood.StyleSheet) tea.Cmd {
 	m.widget.Styler = styler
 	return m.content.Init(styler)
 }
