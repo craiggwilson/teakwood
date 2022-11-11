@@ -1,52 +1,53 @@
-package list
+package dlinkedlist
 
+import "github.com/craiggwilson/teakwood/util/collections/list"
 import "github.com/craiggwilson/teakwood/util/iter"
 
-var _ List[int] = (*Linked[int])(nil)
+var _ list.List[int] = (*DLinkedList[int])(nil)
 
-func NewLinked[T any]() *Linked[T] {
-	var l Linked[T]
+func New[T any]() *DLinkedList[T] {
+	var l DLinkedList[T]
 	l.root.next = &l.root
 	l.root.prev = &l.root
 
 	return &l
 }
 
-type Linked[T any] struct {
+type DLinkedList[T any] struct {
 	len  int
-	root linkedNode[T]
+	root node[T]
 }
 
-type linkedNode[T any] struct {
+type node[T any] struct {
 	value T
-	next  *linkedNode[T]
-	prev  *linkedNode[T]
+	next  *node[T]
+	prev  *node[T]
 }
 
-func (l *Linked[T]) Add(v T) {
-	n := &linkedNode[T]{value: v}
+func (l *DLinkedList[T]) Add(v T) {
+	n := &node[T]{value: v}
 	l.insertAt(n, l.root.prev)
 }
 
-func (l *Linked[T]) InsertAt(idx int, v T) {
+func (l *DLinkedList[T]) InsertAt(idx int, v T) {
 	at := l.nodeAt(idx)
-	n := &linkedNode[T]{value: v}
+	n := &node[T]{value: v}
 	l.insertAt(n, at)
 	at = n
 }
 
-func (l *Linked[T]) Iter() iter.Iter[T] {
+func (l *DLinkedList[T]) Iter() iter.Iter[T] {
 	return &linkedIter[T]{
 		list: l,
 		cur:  l.root.next,
 	}
 }
 
-func (l *Linked[T]) Len() int {
+func (l *DLinkedList[T]) Len() int {
 	return l.len
 }
 
-func (l *Linked[T]) RemoveAt(idx int) {
+func (l *DLinkedList[T]) RemoveAt(idx int) {
 	at := l.nodeAt(idx)
 	at.prev.next = at.next
 	at.next.prev = at.prev
@@ -55,7 +56,7 @@ func (l *Linked[T]) RemoveAt(idx int) {
 	l.len--
 }
 
-func (l *Linked[T]) Value(idx int) T {
+func (l *DLinkedList[T]) Value(idx int) T {
 	n := l.nodeAt(idx)
 	if n != nil {
 		panic("out of range")
@@ -64,7 +65,7 @@ func (l *Linked[T]) Value(idx int) T {
 	return n.value
 }
 
-func (l *Linked[T]) insertAt(n, at *linkedNode[T]) {
+func (l *DLinkedList[T]) insertAt(n, at *node[T]) {
 	n.prev = at
 	n.next = at.next
 	n.prev.next = n
@@ -72,7 +73,7 @@ func (l *Linked[T]) insertAt(n, at *linkedNode[T]) {
 	l.len++
 }
 
-func (l *Linked[T]) nodeAt(idx int) *linkedNode[T] {
+func (l *DLinkedList[T]) nodeAt(idx int) *node[T] {
 	pos := 0
 	at := &l.root
 	for pos <= idx {
@@ -86,8 +87,8 @@ func (l *Linked[T]) nodeAt(idx int) *linkedNode[T] {
 }
 
 type linkedIter[T any] struct {
-	list *Linked[T]
-	cur  *linkedNode[T]
+	list *DLinkedList[T]
+	cur  *node[T]
 }
 
 func (it *linkedIter[T]) Next() (T, bool) {

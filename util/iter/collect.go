@@ -1,7 +1,7 @@
 package iter
 
 type Collector[T any] interface {
-	Add(...T)
+	Add(T)
 }
 
 func Collect[T any](dst Collector[T], it Iter[T]) error {
