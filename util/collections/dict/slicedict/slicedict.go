@@ -45,7 +45,7 @@ func (d *SliceDict[K, V]) Iter() iter.Iter[iter.KeyValuePair[K, V]] {
 }
 
 func (d *SliceDict[K, V]) Keys() iter.Iter[K] {
-	return iter.Project(d.Iter(), func(kvp iter.KeyValuePair[K, V]) K {
+	return iter.Map(d.Iter(), func(kvp iter.KeyValuePair[K, V]) K {
 		return kvp.Key
 	})
 }
@@ -75,7 +75,7 @@ func (d *SliceDict[K, V]) Value(k K) (V, bool) {
 }
 
 func (d *SliceDict[K, V]) Values() iter.Iter[V] {
-	return iter.Project(d.Iter(), func(kvp iter.KeyValuePair[K, V]) V {
+	return iter.Map(d.Iter(), func(kvp iter.KeyValuePair[K, V]) V {
 		return kvp.Value
 	})
 }
